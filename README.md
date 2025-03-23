@@ -1,6 +1,6 @@
 # Park & Ride: Smart Urban Mobility System
 
-![Park and Ride Logo](docs/images/logo.png)
+![Park and Ride Logo]
 
 ## About Park & Ride
 
@@ -118,4 +118,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-Developed with ❤️ by [Your Name] 
+Developed with ❤️ by [Sahil Singh] 
