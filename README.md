@@ -61,10 +61,10 @@ Park & Ride is a comprehensive urban mobility solution designed to simplify comm
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/park-and-ride.git
+git clone https://github.com/amberIS01/Park-and-Ride-Project.git
 
 # Navigate to the project directory
-cd park-and-ride
+cd Park-and-Ride_Project
 
 # Install dependencies
 mvn install
