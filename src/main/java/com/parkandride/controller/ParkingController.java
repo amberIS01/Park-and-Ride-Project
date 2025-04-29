@@ -18,6 +18,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/parking")
@@ -153,7 +154,7 @@ public class ParkingController {
         List<Reservation> recentReservations = userReservations.stream()
                 .sorted((r1, r2) -> r2.getStartTime().compareTo(r1.getStartTime()))
                 .limit(5) // Show only 5 most recent
-                .toList();
+                .collect(Collectors.toList());
         
         // Count total reservations (all statuses)
         int totalReservations = userReservations.size();
