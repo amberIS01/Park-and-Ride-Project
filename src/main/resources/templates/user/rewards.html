@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rewards - Park and Ride</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            transition: background-color 0.3s ease;
+        }
+        body.dark-mode {
+            background-color: #212529;
+            color: #f8f9fa;
+        }
+        .dark-mode .card {
+            background-color: #343a40;
+            color: #f8f9fa;
+        }
+        .dark-mode .sidebar {
+            background-color: #343a40;
+        }
+        .dark-mode .sidebar .nav-link {
+            color: #f8f9fa;
+        }
+        .dark-mode .table {
+            color: #f8f9fa;
+        }
+        .dark-mode .form-label {
+            color: #f8f9fa;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            padding: 48px 0 0;
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+            background-color: #ffffff;
+        }
+        .sidebar .nav-link {
+            font-weight: 500;
+            color: #333;
+            padding: 0.75rem 1.5rem;
+        }
+        .sidebar .nav-link.active {
+            color: #0d6efd;
+        }
+        .sidebar .nav-link:hover {
+            color: #0d6efd;
+        }
+        .sidebar .nav-link i {
+            margin-right: 10px;
+        }
+        .content-wrapper {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                top: 5rem;
+            }
+            .content-wrapper {
+                margin-left: 0;
+            }
+        }
+        .reward-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .reward-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        .reward-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: #0d6efd;
+        }
+        .points-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #ffc107;
+            color: #212529;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin: 0 auto 15px;
+        }
+        .reward-progress {
+            height: 10px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .history-item {
+            padding: 15px;
+            border-left: 4px solid #0d6efd;
+            margin-bottom: 15px;
+            background-color: #f8f9fa;
+            border-radius: 0 5px 5px 0;
+        }
+        .dark-mode .history-item {
+            background-color: #2b3035;
+            border-left-color: #0d6efd;
+        }
+        .history-date {
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+        .history-card {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navbar -->
+    <nav class="navbar navbar-light bg-white fixed-top shadow-sm d-md-none">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="fas fa-car-side text-primary me-2"></i>
+                Park & Ride
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+        <div class="position-sticky">
+            <div class="d-none d-md-flex align-items-center justify-content-center p-3 mb-3">
+                <a class="navbar-brand fw-bold" href="/parking/dashboard" th:href="@{/parking/dashboard}">
+                    <i class="fas fa-car-side text-primary me-2"></i>
+                    Park & Ride
+                </a>
+            </div>
+            <div class="text-center mb-4">
+                <div class="mb-3">
+                    <i class="fas fa-user-circle fa-4x text-primary"></i>
+                </div>
+                <h6 th:text="${user.firstName + ' ' + user.lastName}">User Name</h6>
+                <small class="text-muted d-block" th:text="${user.email}">user@example.com</small>
+                <div class="user-subscription mt-2" th:if="${user.hasActiveSubscription()}">
+                    <span class="badge bg-success">
+                        <i class="fas fa-crown me-1"></i>
+                        <span th:text="${user.subscriptionType.displayName}">Monthly Pass</span>
+                    </span>
+                </div>
+                <div class="user-rewards mt-2">
+                    <span class="badge bg-warning text-dark">
+                        <i class="fas fa-gift me-1"></i>
+                        <span th:text="${user.rewardPoints}">100</span> Points
+                    </span>
+                </div>
+            </div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" href="/parking/dashboard" th:href="@{/parking/dashboard}">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/parking/my-reservations" th:href="@{/parking/my-reservations}">
+                        <i class="fas fa-ticket-alt"></i>
+                        My Reservations
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/user/subscriptions" th:href="@{/user/subscriptions}">
+                        <i class="fas fa-crown"></i>
+                        Subscriptions
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/user/rewards" th:href="@{/user/rewards}">
+                        <i class="fas fa-gift"></i>
+                        Rewards
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/rides/last-mile" th:href="@{/rides/last-mile}">
+                        <i class="fas fa-shuttle-van"></i>
+                        Last-Mile Rides
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/user/profile" th:href="@{/user/profile}">
+                        <i class="fas fa-user-cog"></i>
+                        Profile
+                    </a>
+                </li>
+                <li class="nav-item mt-5">
+                    <a class="nav-link text-danger" href="/logout" th:href="@{/logout}">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="content-wrapper">
+        <!-- Alerts -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2">Rewards Program</h1>
+            <div class="btn-toolbar mb-2 mb-md-0">
+                <div class="btn-group me-2">
+                    <button id="themeToggle" class="btn btn-sm btn-outline-secondary theme-toggle">
+                        <i class="fas fa-moon"></i> Dark Mode
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Points Summary -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-warning">
+                        <h5 class="mb-0 text-dark">Your Points</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="points-circle mb-3">
+                            <span th:text="${user.rewardPoints}">100</span>
+                        </div>
+                        <h5>Current Balance</h5>
+                        <p class="text-muted">Earn 1 point for every dollar spent on parking reservations.</p>
+                        <p>You can convert your points to credit in your profile page!</p>
+                        <a href="/user/profile" th:href="@{/user/profile}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-exchange-alt me-1"></i> Convert Points to Credit
+                        </a>
+                        <div class="alert alert-info mt-3">
+                            <small><i class="fas fa-info-circle me-1"></i> 10 points = $1.00 credit</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">How to Earn More</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled">
+                            <li class="mb-3">
+                                <i class="fas fa-parking text-primary me-2"></i>
+                                <strong>Parking Reservations:</strong> 1 point per $1 spent
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-crown text-primary me-2"></i>
+                                <strong>Subscriptions:</strong> 2-5x points multiplier
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-user-plus text-primary me-2"></i>
+                                <strong>Referrals:</strong> 100 points per new user
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-check-circle text-primary me-2"></i>
+                                <strong>Check-ins:</strong> 10 bonus points for on-time check-ins
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-dollar-sign text-primary me-2"></i>
+                                <strong>Credit Conversion:</strong> Convert points to credit at any time
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Available Rewards -->
+        <h4 class="mb-3">Available Rewards</h4>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card reward-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-parking reward-icon"></i>
+                        <h5>Free Parking</h5>
+                        <p>Redeem 200 points for a free 1-day parking pass.</p>
+                        <form th:action="@{/user/redeem-reward}" method="post">
+                            <input type="hidden" name="rewardType" value="FREE_PARKING">
+                            <button class="btn btn-primary" 
+                                    th:disabled="${user.rewardPoints < 200}"
+                                    type="submit">
+                                Redeem (200 Points)
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card reward-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-car-side reward-icon"></i>
+                        <h5>Reserved Premium Spot</h5>
+                        <p>Redeem 300 points for a reserved premium parking spot.</p>
+                        <form th:action="@{/user/redeem-reward}" method="post">
+                            <input type="hidden" name="rewardType" value="PREMIUM_SPOT">
+                            <button class="btn btn-primary" 
+                                    th:disabled="${user.rewardPoints < 300}"
+                                    type="submit">
+                                Redeem (300 Points)
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card reward-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-clock reward-icon"></i>
+                        <h5>Extended Hours</h5>
+                        <p>Redeem 150 points for 3 extra hours on any reservation.</p>
+                        <form th:action="@{/user/redeem-reward}" method="post">
+                            <input type="hidden" name="rewardType" value="EXTENDED_HOURS">
+                            <button class="btn btn-primary" 
+                                    th:disabled="${user.rewardPoints < 150}"
+                                    type="submit">
+                                Redeem (150 Points)
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Points History -->
+        <h4 class="mt-5 mb-3">Points History</h4>
+        <div class="card history-card">
+            <div class="card-body">
+                <!-- Example history items - would be populated from database in real app -->
+                <div class="history-item">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong>+25 Points</strong>
+                            <p class="mb-0">Reservation #PR-12345</p>
+                        </div>
+                        <div class="text-end">
+                            <span class="history-date">Mar 10, 2025</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="history-item">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong>+50 Points</strong>
+                            <p class="mb-0">Reservation #PR-12340</p>
+                        </div>
+                        <div class="text-end">
+                            <span class="history-date">Mar 5, 2025</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="history-item">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong>+100 Points</strong>
+                            <p class="mb-0">Signup Bonus</p>
+                        </div>
+                        <div class="text-end">
+                            <span class="history-date">Mar 1, 2025</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center mt-3" th:if="${false}">
+                    <a href="#" class="btn btn-sm btn-outline-primary">View More</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Theme toggle functionality
+            const themeToggle = document.getElementById('themeToggle');
+            const body = document.body;
+            
+            // Check for stored preference and apply it
+            const darkModeEnabled = localStorage.getItem('darkMode') === 'true';
+            if (darkModeEnabled) {
+                body.classList.add('dark-mode');
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+            }
+            
+            themeToggle.addEventListener('click', function() {
+                body.classList.toggle('dark-mode');
+                
+                const isDarkMode = body.classList.contains('dark-mode');
+                localStorage.setItem('darkMode', isDarkMode);
+                
+                if (isDarkMode) {
+                    themeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+                } else {
+                    themeToggle.innerHTML = '<i class="fas fa-moon"></i> Dark Mode';
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

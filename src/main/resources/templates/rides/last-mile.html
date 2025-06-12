@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Last-Mile Rides - Park and Ride</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --secondary-color: #6c757d;
+            --accent-color: #ffc107;
+            --dark-color: #212529;
+            --light-color: #f8f9fa;
+            --border-radius: 10px;
+            --box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-color);
+            transition: background-color 0.3s ease;
+        }
+        
+        body.dark-mode {
+            background-color: #1a1d20;
+            color: #e9ecef;
+        }
+        
+        .dark-mode .card,
+        .dark-mode .bg-light,
+        .dark-mode .list-group-item,
+        .dark-mode .modal-content {
+            background-color: #2c3034 !important;
+            color: #e9ecef;
+            border-color: #444;
+        }
+        
+        .dark-mode .text-dark {
+            color: #e9ecef !important;
+        }
+        
+        .dark-mode .border {
+            border-color: #444 !important;
+        }
+        
+        .dark-mode .text-muted {
+            color: #adb5bd !important;
+        }
+        
+        .dark-mode .btn-outline-dark {
+            color: #e9ecef;
+            border-color: #e9ecef;
+        }
+        
+        .sidebar {
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            z-index: 100;
+            padding-top: 20px;
+            box-shadow: var(--box-shadow);
+            transition: all 0.3s;
+        }
+        
+        .sidebar-sticky {
+            position: relative;
+            top: 0;
+            height: calc(100vh - 60px);
+            padding-top: 0.5rem;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        
+        .main-content {
+            margin-left: 250px;
+            transition: all 0.3s;
+        }
+        
+        @media (max-width: 767.98px) {
+            .sidebar {
+                width: 60px;
+                transform: translateX(-200px);
+                padding-top: 60px;
+            }
+            
+            .sidebar:hover {
+                width: 250px;
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 60px;
+            }
+            
+            .sidebar .nav-link span,
+            .sidebar .navbar-brand span {
+                display: none;
+            }
+            
+            .sidebar:hover .nav-link span,
+            .sidebar:hover .navbar-brand span {
+                display: inline;
+            }
+        }
+        
+        .ride-card {
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            transition: transform 0.3s ease;
+            height: 100%;
+        }
+        
+        .ride-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .promo-banner {
+            background: linear-gradient(135deg, var(--primary-color), #0056b3);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            display: inline-block;
+            color: var(--primary-color);
+        }
+        
+        .destination-card {
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            height: 100%;
+        }
+        
+        .destination-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        
+        .destination-card .card-img-overlay {
+            background: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.1));
+        }
+        
+        .time-slot {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .time-slot:hover, .time-slot.selected {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .payment-option {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .payment-option:hover, .payment-option.selected {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 1px var(--primary-color);
+        }
+        
+        .booking-summary {
+            background-color: rgba(13, 110, 253, 0.05);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .modal-dialog.review-modal {
+            max-width: 600px;
+        }
+        
+        /* Custom styles for star rating */
+        .rating-stars {
+            display: inline-block;
+            position: relative;
+            height: 30px;
+            line-height: 30px;
+            font-size: 30px;
+        }
+        
+        .rating-stars input {
+            opacity: 0;
+            position: absolute;
+            left: 0;
+            top: 0;
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            z-index: 2;
+        }
+        
+        .rating-stars .filled-stars {
+            position: absolute;
+            left: 0;
+            top: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            color: #ffc107;
+            z-index: 1;
+        }
+        
+        .rating-stars .empty-stars {
+            color: #adb5bd;
+        }
+        
+        .driver-status {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #28a745;
+            box-shadow: 0 0 0 2px white;
+            z-index: 2;
+        }
+        
+        /* Animation */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="d-flex flex-column flex-shrink-0 p-3 bg-white h-100">
+            <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
+                <i class="fas fa-car-side text-primary me-2"></i>
+                <span class="fs-4 fw-bold">Park & Ride</span>
+            </a>
+            <hr>
+            <ul class="nav nav-pills flex-column mb-auto">
+                <li class="nav-item">
+                    <a href="/dashboard" th:href="@{/dashboard}" class="nav-link text-dark">
+                        <i class="fas fa-tachometer-alt me-2"></i>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/parking/my-reservations" th:href="@{/parking/my-reservations}" class="nav-link text-dark">
+                        <i class="fas fa-ticket-alt me-2"></i>
+                        My Reservations
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/rides/last-mile" th:href="@{/rides/last-mile}" class="nav-link active text-white bg-primary">
+                        <i class="fas fa-shuttle-van me-2"></i>
+                        Last-Mile Rides
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/rides/my-rides" th:href="@{/rides/my-rides}" class="nav-link text-dark">
+                        <i class="fas fa-history me-2"></i>
+                        My Rides
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/user/profile" th:href="@{/user/profile}" class="nav-link text-dark">
+                        <i class="fas fa-user-cog me-2"></i>
+                        Profile
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/logout" th:href="@{/logout}" class="nav-link text-dark">
+                        <i class="fas fa-sign-out-alt me-2"></i>
+                        Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content p-4 pb-5">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0"><i class="fas fa-shuttle-van text-primary me-2"></i>Last-Mile Rides</h2>
+                <div>
+                    <button class="btn btn-sm btn-outline-dark me-2" id="themeToggle">
+                        <i class="fas fa-moon"></i> Dark Mode
+                    </button>
+                    <a href="/rides/my-rides" th:href="@{/rides/my-rides}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-history"></i> My Ride History
+                    </a>
+                </div>
+            </div>
+
+            <!-- Alerts -->
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <span th:text="${successMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <!-- Promo Banner -->
+            <div class="promo-banner text-white mb-4 fade-in">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h3>First Ride Free!</h3>
+                        <p class="mb-0">Use code <strong>FIRSTRIDE</strong> to get your first ride free (up to ₹150). Valid for new users only.</p>
+                    </div>
+                    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                        <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#promoModal">
+                            Apply Code
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Popular Destinations -->
+            <section class="mb-5">
+                <h4 class="mb-4">Popular Destinations</h4>
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="destination-card card" onclick="selectDestination('Mumbai Central Station')">
+                            <div class="card-body text-center">
+                                <div class="display-4 mb-3 text-primary">
+                                    <i class="fas fa-train"></i>
+                                </div>
+                                <h5 class="card-title">Mumbai Central Station</h5>
+                                <p class="card-text small text-muted">Connects to Western & Central Railways</p>
+                                <hr>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-warning"><i class="fas fa-bolt"></i> 5 min away</span>
+                                    <span class="fw-bold">₹50 - ₹120</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="destination-card card" onclick="selectDestination('Bandra Kurla Complex')">
+                            <div class="card-body text-center">
+                                <div class="display-4 mb-3 text-info">
+                                    <i class="fas fa-building"></i>
+                                </div>
+                                <h5 class="card-title">Bandra Kurla Complex</h5>
+                                <p class="card-text small text-muted">Business district with corporate offices</p>
+                                <hr>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-warning"><i class="fas fa-bolt"></i> 8 min away</span>
+                                    <span class="fw-bold">₹80 - ₹200</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="destination-card card" onclick="selectDestination('Juhu Beach')">
+                            <div class="card-body text-center">
+                                <div class="display-4 mb-3 text-warning">
+                                    <i class="fas fa-umbrella-beach"></i>
+                                </div>
+                                <h5 class="card-title">Juhu Beach</h5>
+                                <p class="card-text small text-muted">Popular beach & tourist destination</p>
+                                <hr>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-warning"><i class="fas fa-bolt"></i> 12 min away</span>
+                                    <span class="fw-bold">₹100 - ₹250</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-4 mt-1">
+                    <div class="col-md-4">
+                        <div class="destination-card card" onclick="selectDestination('Powai Lake')">
+                            <div class="card-body text-center">
+                                <div class="display-4 mb-3 text-success">
+                                    <i class="fas fa-water"></i>
+                                </div>
+                                <h5 class="card-title">Powai Lake</h5>
+                                <p class="card-text small text-muted">Scenic lake & residential area</p>
+                                <hr>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-warning"><i class="fas fa-bolt"></i> 15 min away</span>
+                                    <span class="fw-bold">₹120 - ₹300</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="destination-card card" onclick="selectDestination('Lower Parel')">
+                            <div class="card-body text-center">
+                                <div class="display-4 mb-3 text-danger">
+                                    <i class="fas fa-shopping-bag"></i>
+                                </div>
+                                <h5 class="card-title">Lower Parel</h5>
+                                <p class="card-text small text-muted">Shopping malls & entertainment</p>
+                                <hr>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-warning"><i class="fas fa-bolt"></i> 7 min away</span>
+                                    <span class="fw-bold">₹70 - ₹180</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="destination-card card" onclick="selectDestination('Gateway of India')">
+                            <div class="card-body text-center">
+                                <div class="display-4 mb-3 text-secondary">
+                                    <i class="fas fa-monument"></i>
+                                </div>
+                                <h5 class="card-title">Gateway of India</h5>
+                                <p class="card-text small text-muted">Historic monument & tourist spot</p>
+                                <hr>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-warning"><i class="fas fa-bolt"></i> 20 min away</span>
+                                    <span class="fw-bold">₹150 - ₹350</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Ride Options -->
+            <section class="mb-5">
+                <h4 class="mb-4">Book Your Ride</h4>
+                <div class="row">
+                    <!-- Ride Booking Form -->
+                    <div class="col-lg-8">
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-body">
+                                <form id="rideBookingForm">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6 mb-3 mb-md-0">
+                                            <label for="pickupLocation" class="form-label">Pickup Location</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                                                <input type="text" class="form-control" id="pickupLocation" placeholder="Current Parking Location" value="Park & Ride Parking Lot">
+                                                <button class="btn btn-outline-secondary" type="button" id="useCurrentLocation">
+                                                    <i class="fas fa-crosshairs"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="destination" class="form-label">Destination</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-flag"></i></span>
+                                                <input type="text" class="form-control" id="destination" placeholder="Where are you going?">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mb-4">
+                                        <div class="col-md-6 mb-3 mb-md-0">
+                                            <label class="form-label">Schedule</label>
+                                            <div class="d-flex">
+                                                <div class="form-check me-3">
+                                                    <input class="form-check-input" type="radio" name="scheduleType" id="scheduleNow" checked>
+                                                    <label class="form-check-label" for="scheduleNow">
+                                                        Now
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="scheduleType" id="scheduleLater">
+                                                    <label class="form-check-label" for="scheduleLater">
+                                                        Schedule for Later
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div id="scheduleDateTimeContainer" class="mt-2 d-none">
+                                                <input type="datetime-local" class="form-control" id="scheduleDateTime">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Number of Passengers</label>
+                                            <select class="form-select" id="passengerCount">
+                                                <option value="1">1 Passenger</option>
+                                                <option value="2">2 Passengers</option>
+                                                <option value="3">3 Passengers</option>
+                                                <option value="4">4 Passengers</option>
+                                                <option value="5">5+ Passengers</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <label class="form-label">Ride Type</label>
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <div class="card ride-card" onclick="selectRideType('cab')">
+                                                    <div class="card-body text-center">
+                                                        <div class="feature-icon">
+                                                            <i class="fas fa-taxi"></i>
+                                                        </div>
+                                                        <h5 class="card-title">Cab</h5>
+                                                        <p class="card-text text-muted small">Comfortable ride for 1-4 people</p>
+                                                        <p class="card-text fw-bold">₹120 - ₹350</p>
+                                                        <div class="text-muted small">
+                                                            <i class="fas fa-clock"></i> 5-20 min wait
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="card ride-card" onclick="selectRideType('shuttle')">
+                                                    <div class="card-body text-center">
+                                                        <div class="feature-icon">
+                                                            <i class="fas fa-shuttle-van"></i>
+                                                        </div>
+                                                        <h5 class="card-title">Shuttle</h5>
+                                                        <p class="card-text text-muted small">Shared ride, fixed routes</p>
+                                                        <p class="card-text fw-bold">₹50 - ₹150</p>
+                                                        <div class="text-muted small">
+                                                            <i class="fas fa-clock"></i> 10-30 min wait
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="card ride-card" onclick="selectRideType('erickshaw')">
+                                                    <div class="card-body text-center">
+                                                        <div class="feature-icon">
+                                                            <i class="fas fa-charging-station"></i>
+                                                        </div>
+                                                        <h5 class="card-title">E-Rickshaw</h5>
+                                                        <p class="card-text text-muted small">Eco-friendly for short distances</p>
+                                                        <p class="card-text fw-bold">₹30 - ₹100</p>
+                                                        <div class="text-muted small">
+                                                            <i class="fas fa-clock"></i> 2-10 min wait
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Cab Sharing Option -->
+                                    <div id="cabSharingOptions" class="mb-4 d-none">
+                                        <label class="form-label">Cab Sharing Options</label>
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <div class="card h-100 sharing-option" onclick="selectSharingOption('private')">
+                                                    <div class="card-body">
+                                                        <div class="d-flex align-items-center mb-2">
+                                                            <div class="me-3">
+                                                                <i class="fas fa-user text-primary fs-3"></i>
+                                                            </div>
+                                                            <div>
+                                                                <h5 class="card-title mb-1">Private Ride</h5>
+                                                                <p class="card-text text-muted small mb-0">Entire cab for yourself</p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="d-flex justify-content-between align-items-center mt-3">
+                                                            <span class="text-muted small"><i class="fas fa-clock"></i> 5-10 min wait</span>
+                                                            <span class="fw-bold">Standard fare</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="card h-100 sharing-option" onclick="selectSharingOption('shared')">
+                                                    <div class="card-body">
+                                                        <div class="d-flex align-items-center mb-2">
+                                                            <div class="me-3">
+                                                                <i class="fas fa-users text-success fs-3"></i>
+                                                            </div>
+                                                            <div>
+                                                                <h5 class="card-title mb-1">Shared Ride</h5>
+                                                                <p class="card-text text-muted small mb-0">Share with others going the same way</p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="d-flex justify-content-between align-items-center mt-3">
+                                                            <span class="text-muted small"><i class="fas fa-clock"></i> 10-15 min wait</span>
+                                                            <span class="fw-bold text-success">Save 40%</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Payment Methods -->
+                                    <div class="mb-4">
+                                        <label class="form-label">Payment Method</label>
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <div class="card h-100 payment-option" onclick="selectPaymentMethod('cash')">
+                                                    <div class="card-body text-center">
+                                                        <i class="fas fa-money-bill-wave text-success fs-3 mb-2"></i>
+                                                        <h5 class="card-title">Cash</h5>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="card h-100 payment-option" onclick="selectPaymentMethod('upi')">
+                                                    <div class="card-body text-center">
+                                                        <i class="fas fa-mobile-alt text-primary fs-3 mb-2"></i>
+                                                        <h5 class="card-title">UPI</h5>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="card h-100 payment-option" onclick="selectPaymentMethod('card')">
+                                                    <div class="card-body text-center">
+                                                        <i class="far fa-credit-card text-info fs-3 mb-2"></i>
+                                                        <h5 class="card-title">Card</h5>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Promo Code -->
+                                    <div class="mb-4">
+                                        <label for="promoCode" class="form-label">Promo Code (Optional)</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="promoCode" placeholder="Enter promo code">
+                                            <button class="btn btn-outline-primary" type="button" onclick="applyPromoCode()">Apply</button>
+                                        </div>
+                                        <div class="form-text" id="promoStatus"></div>
+                                    </div>
+                                    
+                                    <!-- Booking Summary -->
+                                    <div class="card mb-4">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">Booking Summary</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>Pickup Location:</span>
+                                                <span id="summaryPickup">Your live location</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>Destination:</span>
+                                                <span id="summaryDestination">-</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>Ride Type:</span>
+                                                <span id="summaryRideType">-</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>Payment Method:</span>
+                                                <span id="summaryPayment">-</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-2 text-success d-none" id="discountRow">
+                                                <span>Discount:</span>
+                                                <span id="summaryDiscount">-</span>
+                                            </div>
+                                            <hr>
+                                            <div class="d-flex justify-content-between fw-bold">
+                                                <span>Total Fare:</span>
+                                                <span id="summaryFare">₹0</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Book Button -->
+                                    <div class="d-grid">
+                                        <button class="btn btn-primary btn-lg" type="button" onclick="bookRide()">Book Ride</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Booking Summary -->
+                    <div class="col-lg-4">
+                        <div class="card shadow-sm" id="bookingSummary" style="position: sticky; top: 20px;">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">Booking Summary</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="booking-summary">
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span class="text-muted">Pickup:</span>
+                                            <span id="summaryPickup">Park & Ride Parking Lot</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span class="text-muted">Destination:</span>
+                                            <span id="summaryDestination">Not selected</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span class="text-muted">Schedule:</span>
+                                            <span id="summarySchedule">Now</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span class="text-muted">Ride Type:</span>
+                                            <span id="summaryRideType">Not selected</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span class="text-muted">Payment:</span>
+                                            <span id="summaryPayment">Not selected</span>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-muted">Base Fare:</span>
+                                        <span id="summaryBaseFare">₹0</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2 text-success">
+                                        <span>Discount:</span>
+                                        <span id="summaryDiscount">-₹0</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-muted">Taxes & Fees:</span>
+                                        <span id="summaryTaxes">₹0</span>
+                                    </div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between fw-bold">
+                                        <span>Total:</span>
+                                        <span id="summaryTotal">₹0</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4 text-center">
+                                    <div class="text-muted small mb-2">
+                                        <i class="fas fa-shield-alt"></i> Secure booking with 24/7 support
+                                    </div>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#fareDetailsModal">
+                                        <i class="fas fa-info-circle"></i> Fare Details
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Featured Drivers -->
+            <section class="mb-5">
+                <h4 class="mb-4">Top Rated Drivers Nearby</h4>
+                <div class="row g-4">
+                    <div class="col-md-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <div class="position-relative d-inline-block mb-3">
+                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; margin: 0 auto;">
+                                        <i class="fas fa-user-tie fa-3x text-primary"></i>
+                                    </div>
+                                    <div class="driver-status"></div>
+                                </div>
+                                <h5 class="card-title">Rajesh K.</h5>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="text-warning">
+                                        <i class="fas fa-star"></i> 4.9 (328)
+                                    </div>
+                                    <div class="text-muted small">
+                                        <i class="fas fa-car"></i> Cab
+                                    </div>
+                                </div>
+                                <p class="card-text small text-muted">2 mins away • 5+ years experience</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <div class="position-relative d-inline-block mb-3">
+                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; margin: 0 auto;">
+                                        <i class="fas fa-user-tie fa-3x text-info"></i>
+                                    </div>
+                                    <div class="driver-status"></div>
+                                </div>
+                                <h5 class="card-title">Priya S.</h5>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="text-warning">
+                                        <i class="fas fa-star"></i> 4.8 (214)
+                                    </div>
+                                    <div class="text-muted small">
+                                        <i class="fas fa-shuttle-van"></i> Shuttle
+                                    </div>
+                                </div>
+                                <p class="card-text small text-muted">5 mins away • 3+ years experience</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <div class="position-relative d-inline-block mb-3">
+                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; margin: 0 auto;">
+                                        <i class="fas fa-user-tie fa-3x text-success"></i>
+                                    </div>
+                                    <div class="driver-status"></div>
+                                </div>
+                                <h5 class="card-title">Vijay M.</h5>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="text-warning">
+                                        <i class="fas fa-star"></i> 4.7 (186)
+                                    </div>
+                                    <div class="text-muted small">
+                                        <i class="fas fa-charging-station"></i> E-Rickshaw
+                                    </div>
+                                </div>
+                                <p class="card-text small text-muted">1 min away • 2+ years experience</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <div class="position-relative d-inline-block mb-3">
+                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; margin: 0 auto;">
+                                        <i class="fas fa-user-tie fa-3x text-danger"></i>
+                                    </div>
+                                    <div class="driver-status"></div>
+                                </div>
+                                <h5 class="card-title">Anita D.</h5>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="text-warning">
+                                        <i class="fas fa-star"></i> 4.9 (257)
+                                    </div>
+                                    <div class="text-muted small">
+                                        <i class="fas fa-taxi"></i> Cab
+                                    </div>
+                                </div>
+                                <p class="card-text small text-muted">3 mins away • 4+ years experience</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Promo Code Modal -->
+    <div class="modal fade" id="promoModal" tabindex="-1" aria-labelledby="promoModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="promoModalLabel">Apply Promo Code</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="promoCode" class="form-label">Enter Promo Code</label>
+                        <input type="text" class="form-control" id="promoCode" placeholder="e.g., FIRSTRIDE">
+                    </div>
+                    <div class="list-group mb-3">
+                        <div class="list-group-item d-flex justify-content-between align-items-center" onclick="selectPromoCode('FIRSTRIDE')">
+                            <div>
+                                <h6 class="mb-1">FIRSTRIDE</h6>
+                                <p class="mb-0 small text-muted">Get your first ride free (up to ₹150)</p>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary">Apply</button>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center" onclick="selectPromoCode('WEEKEND25')">
+                            <div>
+                                <h6 class="mb-1">WEEKEND25</h6>
+                                <p class="mb-0 small text-muted">25% off on weekend rides (up to ₹100)</p>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary">Apply</button>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center" onclick="selectPromoCode('MONSOON20')">
+                            <div>
+                                <h6 class="mb-1">MONSOON20</h6>
+                                <p class="mb-0 small text-muted">20% off during rainy season (up to ₹75)</p>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary">Apply</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="applyPromoCode()">Apply Code</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fare Details Modal -->
+    <div class="modal fade" id="fareDetailsModal" tabindex="-1" aria-labelledby="fareDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="fareDetailsModalLabel">Fare Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <h6>Fare Breakdown</h6>
+                        <ul class="list-group">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Base Fare
+                                <span id="modalBaseFare">₹0</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Distance Fee (estimated)
+                                <span id="modalDistanceFee">₹0</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Time Fee (estimated)
+                                <span id="modalTimeFee">₹0</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center text-success">
+                                Promo Code Discount
+                                <span id="modalDiscount">-₹0</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Taxes & Fees (18% GST)
+                                <span id="modalTaxes">₹0</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center fw-bold">
+                                Total
+                                <span id="modalTotal">₹0</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h6>Fare Policy</h6>
+                        <p class="small text-muted">
+                            Fares are calculated based on the distance, time of the day, and ride type. 
+                            The final fare may vary based on actual route taken and traffic conditions.
+                            Cancellation fee may apply if cancelled after driver assignment.
+                        </p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ride Booked Modal -->
+    <div class="modal fade" id="rideBookedModal" tabindex="-1" aria-labelledby="rideBookedModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center p-5">
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle text-success" style="font-size: 5rem;"></i>
+                    </div>
+                    <h4 class="mb-3">Ride Booked Successfully!</h4>
+                    <p class="mb-4">Your ride has been confirmed. Driver will arrive in approximately <span id="driverArrivalTime">5-10</span> minutes.</p>
+                    <div class="alert alert-light border">
+                        <div class="d-flex justify-content-center mb-3">
+                            <div class="text-center">
+                                <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 60px; height: 60px; color: white;">
+                                    <i class="fas fa-shuttle-van fa-2x"></i>
+                                </div>
+                                <h6 class="mb-0" id="driverName">Your ride is on the way!</h6>
+                            </div>
+                        </div>
+                        <div class="text-center mt-2">
+                            <p class="mb-1"><i class="fas fa-map-marker-alt text-danger me-2"></i> <span id="bookingSummaryPickup">Park & Ride Parking Lot</span></p>
+                            <p class="mb-1"><i class="fas fa-arrow-down text-muted"></i></p>
+                            <p class="mb-1"><i class="fas fa-flag text-success me-2"></i> <span id="bookingSummaryDestination"></span></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-outline-secondary me-2" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i> Close
+                    </button>
+                    <a href="/rides/my-rides" th:href="@{/rides/my-rides}" class="btn btn-primary">
+                        <i class="fas fa-eye me-1"></i> View My Rides
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/last-mile-rides.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Theme toggle functionality
+            const themeToggle = document.getElementById('themeToggle');
+            const body = document.body;
+            
+            // Check for stored preference and apply it
+            const darkModeEnabled = localStorage.getItem('darkMode') === 'true';
+            if (darkModeEnabled) {
+                body.classList.add('dark-mode');
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+            }
+            
+            themeToggle.addEventListener('click', function() {
+                body.classList.toggle('dark-mode');
+                
+                const isDarkMode = body.classList.contains('dark-mode');
+                localStorage.setItem('darkMode', isDarkMode);
+                
+                if (isDarkMode) {
+                    themeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+                } else {
+                    themeToggle.innerHTML = '<i class="fas fa-moon"></i> Dark Mode';
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

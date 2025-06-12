@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Available Parking Spots - Park and Ride</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            transition: background-color 0.3s ease;
+        }
+        body.dark-mode {
+            background-color: #212529;
+            color: #f8f9fa;
+        }
+        .dark-mode .card {
+            background-color: #343a40;
+            color: #f8f9fa;
+        }
+        .dark-mode .card-footer {
+            background-color: #343a40 !important;
+            border-top-color: #495057;
+        }
+        .dark-mode .spot-feature {
+            background-color: #495057;
+            color: #e9ecef;
+        }
+        .dark-mode .navbar {
+            background-color: #343a40 !important;
+        }
+        .dark-mode .navbar-light .navbar-brand,
+        .dark-mode .navbar-light .nav-link {
+            color: #f8f9fa !important;
+        }
+        .dark-mode .footer {
+            background-color: #343a40 !important;
+            color: #f8f9fa;
+        }
+        .spot-card {
+            border-radius: 15px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        .spot-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+        .card-img-top {
+            height: 150px;
+            object-fit: cover;
+        }
+        .spot-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .spot-feature {
+            background-color: #f0f0f0;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+        .price-tag {
+            background-color: #0d6efd;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 15px;
+        }
+        .dark-mode .table th {
+            color: #adb5bd;
+            font-weight: 600;
+        }
+        .dark-mode .table td {
+            color: #e9ecef;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white py-3 shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">
+                <i class="fas fa-car-side text-primary me-2"></i>
+                Park & Ride
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/parking/dashboard" th:href="@{/parking/dashboard}">
+                            <i class="fas fa-tachometer-alt me-1"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/parking/my-reservations" th:href="@{/parking/my-reservations}">
+                            <i class="fas fa-ticket-alt me-1"></i> My Reservations
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/user/profile" th:href="@{/user/profile}">
+                            <i class="fas fa-user-cog me-1"></i> Profile
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-danger" href="/logout" th:href="@{/logout}">
+                            <i class="fas fa-sign-out-alt me-1"></i> Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h2 class="mb-0"><i class="fas fa-parking text-primary me-2"></i> Available Parking Spots</h2>
+                <p class="text-muted" th:text="'Location: ' + ${location}">Location: Metro Station A</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <button id="themeToggle" class="btn btn-sm btn-outline-secondary theme-toggle me-2">
+                    <i class="fas fa-moon"></i> Dark Mode
+                </button>
+                <a href="/parking/dashboard" th:href="@{/parking/dashboard}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12 mb-4" th:if="${spots.empty}">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> No available parking spots found at this location.
+                </div>
+            </div>
+            
+            <div class="col-md-4" th:each="spot : ${spots}">
+                <div class="card spot-card">
+                    <div class="position-relative">
+                        <div class="card-img-top d-flex justify-content-center align-items-center bg-light" style="height: 150px;">
+                            <i th:class="${#strings.contains(spot.spotId, 'A') ? 'fas fa-car fa-5x text-primary' : 
+                                (#strings.contains(spot.spotId, 'B') ? 'fas fa-car-side fa-5x text-success' : 
+                                (#strings.contains(spot.spotId, 'C') ? 'fas fa-truck-pickup fa-5x text-danger' : 
+                                (#strings.contains(spot.spotId, 'D') ? 'fas fa-shuttle-van fa-5x text-warning' : 
+                                'fas fa-car-alt fa-5x text-info')))}"></i>
+                        </div>
+                        <div class="position-absolute bottom-0 start-0 m-3">
+                            <span class="badge bg-primary" th:text="${spot.spotId}">SPOT1</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title" th:text="${spot.location}">Metro Station A</h5>
+                        
+                        <div class="spot-features">
+                            <span class="spot-feature"><i class="fas fa-shield-alt text-success me-1"></i> 24/7 Security</span>
+                            <span class="spot-feature"><i class="fas fa-video text-primary me-1"></i> CCTV</span>
+                            <span class="spot-feature"><i class="fas fa-charging-station text-warning me-1"></i> EV Charging</span>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div>
+                                <div class="text-muted small">Starting from</div>
+                                <div class="price-tag">$<span th:text="${spot.hourlyRate}">5.00</span>/hour</div>
+                            </div>
+                            <a th:href="@{/parking/reserve/{id}(id=${spot.spotId})}" class="btn btn-primary">
+                                <i class="fas fa-bookmark me-1"></i> Reserve
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white">
+                        <div class="d-flex justify-content-between">
+                            <span><i class="fas fa-clock text-muted me-1"></i> Hourly: $<span th:text="${spot.hourlyRate}">5.00</span></span>
+                            <span><i class="fas fa-calendar-day text-muted me-1"></i> Daily: $<span th:text="${spot.dailyRate}">40.00</span></span>
+                            <span><i class="fas fa-calendar-alt text-muted me-1"></i> Monthly: $<span th:text="${spot.monthlyRate}">300.00</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-light py-4 mt-5">
+        <div class="container text-center">
+            <p class="text-muted mb-0">© 2023 Park & Ride. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Theme toggle functionality
+            const themeToggle = document.getElementById('themeToggle');
+            const body = document.body;
+            
+            // Check for stored preference and apply it
+            const darkModeEnabled = localStorage.getItem('darkMode') === 'true';
+            if (darkModeEnabled) {
+                body.classList.add('dark-mode');
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+            }
+            
+            themeToggle.addEventListener('click', function() {
+                body.classList.toggle('dark-mode');
+                
+                const isDarkMode = body.classList.contains('dark-mode');
+                localStorage.setItem('darkMode', isDarkMode);
+                
+                if (isDarkMode) {
+                    themeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+                } else {
+                    themeToggle.innerHTML = '<i class="fas fa-moon"></i> Dark Mode';
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

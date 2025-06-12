@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Rides - Park and Ride</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --secondary-color: #6c757d;
+            --accent-color: #ffc107;
+            --dark-color: #212529;
+            --light-color: #f8f9fa;
+            --border-radius: 10px;
+            --box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-color);
+            transition: background-color 0.3s ease;
+        }
+        
+        .sidebar {
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            z-index: 100;
+            padding-top: 20px;
+            box-shadow: var(--box-shadow);
+            transition: all 0.3s;
+        }
+        
+        .sidebar-sticky {
+            position: relative;
+            top: 0;
+            height: calc(100vh - 60px);
+            padding-top: 0.5rem;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        
+        .main-content {
+            margin-left: 250px;
+            transition: all 0.3s;
+        }
+        
+        @media (max-width: 767.98px) {
+            .sidebar {
+                width: 60px;
+                transform: translateX(-200px);
+                padding-top: 60px;
+            }
+            
+            .sidebar:hover {
+                width: 250px;
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 60px;
+            }
+            
+            .sidebar .nav-link span,
+            .sidebar .navbar-brand span {
+                display: none;
+            }
+            
+            .sidebar:hover .nav-link span,
+            .sidebar:hover .navbar-brand span {
+                display: inline;
+            }
+        }
+        
+        .ride-card {
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            transition: transform 0.3s ease;
+        }
+        
+        .ride-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .no-rides {
+            text-align: center;
+            padding: 50px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .no-rides i {
+            font-size: 5rem;
+            color: var(--secondary-color);
+            margin-bottom: 20px;
+        }
+        
+        .ride-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        
+        .status-completed {
+            background-color: #d1e7dd;
+            color: #0f5132;
+        }
+        
+        .status-ongoing {
+            background-color: #cff4fc;
+            color: #055160;
+        }
+        
+        .status-cancelled {
+            background-color: #f8d7da;
+            color: #842029;
+        }
+        
+        /* Dark mode styles */
+        body.dark-mode {
+            background-color: #121212;
+            color: #f8f9fa;
+        }
+        
+        .dark-mode .sidebar,
+        .dark-mode .card,
+        .dark-mode .list-group-item,
+        .dark-mode .form-control,
+        .dark-mode .form-select {
+            background-color: #212529;
+            color: #f8f9fa;
+            border-color: #444;
+        }
+        
+        .dark-mode .bg-white {
+            background-color: #212529 !important;
+        }
+        
+        .dark-mode .text-dark,
+        .dark-mode .nav-link.text-dark {
+            color: #f8f9fa !important;
+        }
+        
+        .dark-mode .card-footer {
+            background-color: #2c3034;
+            border-color: #444;
+        }
+        
+        .dark-mode .form-floating label {
+            color: #adb5bd;
+        }
+        
+        .dark-mode .btn-outline-dark {
+            color: #f8f9fa;
+            border-color: #f8f9fa;
+        }
+        
+        .dark-mode .btn-outline-dark:hover {
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+        
+        .dark-mode .text-muted {
+            color: #adb5bd !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar bg-white">
+        <div class="d-flex flex-column flex-shrink-0 p-3">
+            <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
+                <i class="fas fa-car-side text-primary me-2"></i>
+                <span class="fs-4 fw-bold">Park & Ride</span>
+            </a>
+            <hr>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a href="/dashboard" th:href="@{/dashboard}" class="nav-link text-dark">
+                        <i class="fas fa-tachometer-alt me-2"></i>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/parking/my-reservations" th:href="@{/parking/my-reservations}" class="nav-link text-dark">
+                        <i class="fas fa-ticket-alt me-2"></i>
+                        My Reservations
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/rides/last-mile" th:href="@{/rides/last-mile}" class="nav-link text-dark">
+                        <i class="fas fa-shuttle-van me-2"></i>
+                        Last-Mile Rides
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/rides/my-rides" th:href="@{/rides/my-rides}" class="nav-link active text-primary">
+                        <i class="fas fa-history me-2"></i>
+                        My Rides
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/user/profile" th:href="@{/user/profile}" class="nav-link text-dark">
+                        <i class="fas fa-user-cog me-2"></i>
+                        Profile
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/logout" th:href="@{/logout}" class="nav-link text-dark">
+                        <i class="fas fa-sign-out-alt me-2"></i>
+                        Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content p-4 pb-5">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0"><i class="fas fa-history text-primary me-2"></i>My Ride History</h2>
+                <a href="/rides/last-mile" th:href="@{/rides/last-mile}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i> Book New Ride
+                </a>
+            </div>
+
+            <!-- Alerts -->
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <span th:text="${successMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <!-- Ride Filters -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="form-floating">
+                                <select class="form-select" id="rideTypeFilter">
+                                    <option value="all" selected>All Types</option>
+                                    <option value="cab">Cab</option>
+                                    <option value="shuttle">Shuttle</option>
+                                    <option value="erickshaw">E-Rickshaw</option>
+                                </select>
+                                <label for="rideTypeFilter">Ride Type</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating">
+                                <select class="form-select" id="dateSortFilter">
+                                    <option value="newest" selected>Newest First</option>
+                                    <option value="oldest">Oldest First</option>
+                                </select>
+                                <label for="dateSortFilter">Sort By</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="destinationFilter" placeholder="Filter by destination">
+                                <label for="destinationFilter">Destination</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ride History -->
+            <div id="rideHistoryContainer" class="row g-4">
+                <!-- Rides will be loaded here dynamically -->
+                <div class="col-12 no-rides" id="noRidesMessage">
+                    <i class="fas fa-car-side text-muted"></i>
+                    <h4>No rides yet</h4>
+                    <p class="text-muted mb-4">You haven't taken any rides yet. Book your first ride now!</p>
+                    <a href="/rides/last-mile" th:href="@{/rides/last-mile}" class="btn btn-primary">
+                        <i class="fas fa-shuttle-van me-1"></i> Book a Ride
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variable to store the loadRideHistory function for access from cancelRide
+        let globalLoadRideHistory;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Theme toggle functionality
+            const body = document.body;
+            
+            // Check for stored preference and apply it
+            const darkModeEnabled = localStorage.getItem('darkMode') === 'true';
+            if (darkModeEnabled) {
+                body.classList.add('dark-mode');
+            }
+            
+            // Add button for dark mode toggle
+            const header = document.querySelector('.d-flex.justify-content-between.align-items-center.mb-4');
+            const toggleBtn = document.createElement('button');
+            toggleBtn.className = 'btn btn-sm btn-outline-dark me-2';
+            toggleBtn.id = 'themeToggle';
+            toggleBtn.innerHTML = darkModeEnabled ? '<i class="fas fa-sun"></i> Light Mode' : '<i class="fas fa-moon"></i> Dark Mode';
+            
+            // Insert before the existing button
+            const existingButton = header.querySelector('.btn.btn-primary');
+            header.insertBefore(toggleBtn, existingButton);
+            
+            // Add event listener
+            toggleBtn.addEventListener('click', function() {
+                body.classList.toggle('dark-mode');
+                
+                const isDarkMode = body.classList.contains('dark-mode');
+                localStorage.setItem('darkMode', isDarkMode);
+                
+                if (isDarkMode) {
+                    toggleBtn.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+                } else {
+                    toggleBtn.innerHTML = '<i class="fas fa-moon"></i> Dark Mode';
+                }
+            });
+            
+            // Load ride history from localStorage
+            loadRideHistory();
+            
+            // Store reference globally to make it accessible to cancelRide function
+            globalLoadRideHistory = loadRideHistory;
+            
+            // Add event listeners for filters
+            document.getElementById('rideTypeFilter').addEventListener('change', filterRides);
+            document.getElementById('dateSortFilter').addEventListener('change', filterRides);
+            document.getElementById('destinationFilter').addEventListener('input', filterRides);
+            
+            function loadRideHistory() {
+                // Get ride history from localStorage
+                const rideHistory = JSON.parse(localStorage.getItem('rideHistory')) || [];
+                const container = document.getElementById('rideHistoryContainer');
+                const noRidesMessage = document.getElementById('noRidesMessage');
+                
+                // Show/hide no rides message
+                if (rideHistory.length === 0) {
+                    noRidesMessage.style.display = 'block';
+                    return;
+                } else {
+                    noRidesMessage.style.display = 'none';
+                }
+                
+                // Clear container except for no rides message
+                Array.from(container.children).forEach(child => {
+                    if (child.id !== 'noRidesMessage') {
+                        container.removeChild(child);
+                    }
+                });
+                
+                // Render ride cards
+                rideHistory.forEach((ride, index) => {
+                    const rideCard = createRideCard(ride, index);
+                    container.appendChild(rideCard);
+                });
+            }
+            
+            function createRideCard(ride, index) {
+                // Create ride card element
+                const col = document.createElement('div');
+                col.className = 'col-md-6 col-lg-4';
+                col.dataset.rideType = ride.rideType;
+                col.dataset.destination = ride.destination;
+                col.dataset.date = ride.date;
+                
+                // Get ride status (use saved status or default to 'ongoing' for newest, completed for others)
+                const rideStatus = ride.status || (index === 0 ? 'ongoing' : 'completed');
+                
+                // Icon based on ride type
+                let rideIcon = 'fa-taxi';
+                if (ride.rideType === 'shuttle') {
+                    rideIcon = 'fa-shuttle-van';
+                } else if (ride.rideType === 'erickshaw') {
+                    rideIcon = 'fa-charging-station';
+                }
+                
+                // Format ride type name
+                let rideTypeName = ride.rideType.charAt(0).toUpperCase() + ride.rideType.slice(1);
+                if (ride.rideType === 'erickshaw') {
+                    rideTypeName = 'E-Rickshaw';
+                }
+                if (ride.rideType === 'cab' && ride.sharing) {
+                    rideTypeName += ride.sharing === 'shared' ? ' (Shared)' : ' (Private)';
+                }
+                
+                // Create card HTML
+                col.innerHTML = `
+                    <div class="card ride-card h-100 position-relative">
+                        <div class="ride-status status-${rideStatus}">${rideStatus}</div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h5 class="card-title mb-0">${ride.destination}</h5>
+                                    <p class="text-muted small mb-0">${ride.date} at ${ride.time}</p>
+                                </div>
+                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                    <i class="fas ${rideIcon} text-primary"></i>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <span class="text-muted small d-block">From</span>
+                                    <span>${ride.pickup}</span>
+                                </div>
+                                <div class="col-6">
+                                    <span class="text-muted small d-block">Ride Type</span>
+                                    <span>${rideTypeName}</span>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <span class="text-muted small d-block">Payment</span>
+                                    <span>${ride.payment.charAt(0).toUpperCase() + ride.payment.slice(1)}</span>
+                                </div>
+                                <div class="col-6">
+                                    <span class="text-muted small d-block">Fare</span>
+                                    <span class="fw-bold">₹${ride.fare}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white border-top-0">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-primary" onclick="showRideDetails('${ride.id}')">
+                                    <i class="fas fa-info-circle me-1"></i> View Details
+                                </button>
+                                ${rideStatus === 'ongoing' ? 
+                                `<button class="btn btn-outline-danger" onclick="cancelRide('${ride.id}')">
+                                    <i class="fas fa-times-circle me-1"></i> Cancel Ride
+                                </button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                return col;
+            }
+            
+            function filterRides() {
+                const rideTypeFilter = document.getElementById('rideTypeFilter').value;
+                const dateSortFilter = document.getElementById('dateSortFilter').value;
+                const destinationFilter = document.getElementById('destinationFilter').value.toLowerCase();
+                
+                const rideCards = document.querySelectorAll('#rideHistoryContainer > div:not(#noRidesMessage)');
+                let visibleCount = 0;
+                
+                rideCards.forEach(card => {
+                    // Apply ride type filter
+                    const rideType = card.dataset.rideType;
+                    const destination = card.dataset.destination.toLowerCase();
+                    
+                    let showCard = (rideTypeFilter === 'all' || rideTypeFilter === rideType) && 
+                                   (destinationFilter === '' || destination.includes(destinationFilter));
+                    
+                    // Show/hide card
+                    card.style.display = showCard ? '' : 'none';
+                    if (showCard) visibleCount++;
+                });
+                
+                // Show 'no rides' message if all filtered out
+                const noRidesMessage = document.getElementById('noRidesMessage');
+                noRidesMessage.style.display = visibleCount === 0 ? 'block' : 'none';
+                
+                // Apply sorting
+                const container = document.getElementById('rideHistoryContainer');
+                const cardsArray = Array.from(rideCards);
+                
+                if (dateSortFilter === 'oldest') {
+                    cardsArray.sort((a, b) => a.dataset.date.localeCompare(b.dataset.date));
+                } else {
+                    cardsArray.sort((a, b) => b.dataset.date.localeCompare(a.dataset.date));
+                }
+                
+                // Re-append cards in sorted order
+                cardsArray.forEach(card => {
+                    if (card.id !== 'noRidesMessage') {
+                        container.appendChild(card);
+                    }
+                });
+            }
+        });
+        
+        // Function to view ride details - to be implemented
+        function showRideDetails(rideId) {
+            alert('Viewing details for ride ' + rideId + ' (Feature coming soon)');
+        }
+
+        // Function to cancel a ride - now defined in global scope to be accessible from HTML
+        function cancelRide(rideId) {
+            if (confirm('Are you sure you want to cancel this ride?')) {
+                // Get ride history
+                let rideHistory = JSON.parse(localStorage.getItem('rideHistory')) || [];
+                
+                // Find the ride by ID
+                const rideIndex = rideHistory.findIndex(ride => ride.id === rideId);
+                
+                if (rideIndex !== -1) {
+                    // Update the ride status to cancelled
+                    rideHistory[rideIndex].status = 'cancelled';
+                    
+                    // Save back to localStorage
+                    localStorage.setItem('rideHistory', JSON.stringify(rideHistory));
+                    
+                    // Update the dashboard count if dashboard has been loaded in this session
+                    updateDashboardCount();
+                    
+                    // Reload the ride history
+                    if (typeof globalLoadRideHistory === 'function') {
+                        globalLoadRideHistory();
+                    } else {
+                        // Fallback - reload the page if function reference is not available
+                        window.location.reload();
+                    }
+                    
+                    // Show success message
+                    alert('Ride cancelled successfully');
+                }
+            }
+        }
+        
+        // Function to update dashboard count
+        function updateDashboardCount() {
+            // This will be executed when user returns to dashboard
+            localStorage.setItem('ridesUpdated', 'true');
+        }
+    </script>
+</body>
+</html> 

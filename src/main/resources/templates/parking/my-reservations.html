@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Reservations - Park and Ride</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            transition: background-color 0.3s ease;
+        }
+        body.dark-mode {
+            background-color: #212529;
+            color: #f8f9fa;
+        }
+        .dark-mode .card {
+            background-color: #343a40;
+            color: #f8f9fa;
+        }
+        .dark-mode .sidebar {
+            background-color: #343a40;
+        }
+        .dark-mode .sidebar .nav-link {
+            color: #f8f9fa;
+        }
+        .dark-mode .table {
+            color: #f8f9fa;
+        }
+        .dark-mode .btn-secondary {
+            background-color: #495057;
+            border-color: #495057;
+        }
+        .dark-mode .tab-btn {
+            color: #f8f9fa;
+        }
+        .dark-mode .tab-btn.active {
+            border-bottom-color: #6ea8fe;
+        }
+        .dark-mode .card-header {
+            background-color: #0d6efd !important;
+        }
+        .dark-mode .text-muted {
+            color: #adb5bd !important;
+        }
+        .dark-mode .reservation-detail-label {
+            color: #adb5bd;
+        }
+        .dark-mode .reservation-detail span:not(.reservation-detail-label):not(.text-success):not(.text-danger) {
+            color: #e9ecef;
+            font-weight: 500;
+        }
+        .dark-mode .info-value {
+            color: #e9ecef;
+            font-weight: 500;
+        }
+        .dark-mode .vehicle-badge {
+            background-color: #0d6efd;
+            color: white;
+            font-weight: 600;
+        }
+        .dark-mode .table, .dark-mode .table th, .dark-mode .table td {
+            color: #e9ecef;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            padding: 48px 0 0;
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+            background-color: #ffffff;
+        }
+        .sidebar .nav-link {
+            font-weight: 500;
+            color: #333;
+            padding: 0.75rem 1.5rem;
+        }
+        .sidebar .nav-link.active {
+            color: #0d6efd;
+        }
+        .sidebar .nav-link:hover {
+            color: #0d6efd;
+        }
+        .sidebar .nav-link i {
+            margin-right: 10px;
+        }
+        .content-wrapper {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                top: 5rem;
+            }
+            .content-wrapper {
+                margin-left: 0;
+            }
+        }
+        .reservation-card {
+            margin-bottom: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .reservation-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+        .badge-status {
+            font-size: 0.8rem;
+            padding: 0.5em 0.8em;
+        }
+        .reservation-detail {
+            margin-bottom: 10px;
+        }
+        .reservation-detail-label {
+            font-weight: 600;
+            color: #6c757d;
+            margin-right: 5px;
+            min-width: 100px;
+            display: inline-block;
+        }
+        .vehicle-badge {
+            display: inline-block;
+            background-color: #e9ecef;
+            color: #495057;
+            padding: 5px 10px;
+            border-radius: 20px;
+            margin-bottom: 15px;
+            font-size: 0.85rem;
+        }
+        .dark-mode .vehicle-badge {
+            background-color: #495057;
+            color: #e9ecef;
+        }
+        .tab-buttons {
+            margin-bottom: 20px;
+            overflow-x: auto;
+            white-space: nowrap;
+            display: flex;
+            gap: 10px;
+        }
+        .tab-btn {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            color: #6c757d;
+            font-weight: 500;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        .tab-btn.active {
+            background-color: #0d6efd;
+            color: white;
+            border-color: #0d6efd;
+        }
+        .dark-mode .tab-btn {
+            background-color: #343a40;
+            border-color: #495057;
+            color: #adb5bd;
+        }
+        .dark-mode .tab-btn.active {
+            background-color: #0d6efd;
+            color: white;
+            border-color: #0d6efd;
+        }
+        /* QR Code Styles */
+        .qr-code-container {
+            display: inline-block;
+            max-width: 220px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        .qr-code-header {
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        .qr-code-box {
+            background-color: white;
+            display: block;
+            width: 100%;
+        }
+        .qr-code-footer {
+            font-size: 0.85rem;
+        }
+        .dark-mode .qr-code-box {
+            background-color: white !important;
+        }
+        .dark-mode .qr-code-footer {
+            background-color: #343a40 !important;
+            color: #f8f9fa;
+        }
+        .dark-mode .qr-code-footer .text-muted {
+            color: #adb5bd !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navbar -->
+    <nav class="navbar navbar-light bg-white fixed-top shadow-sm d-md-none">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="fas fa-car-side text-primary me-2"></i>
+                Park & Ride
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+        <div class="position-sticky">
+            <div class="d-none d-md-flex align-items-center justify-content-center p-3 mb-3">
+                <a class="navbar-brand fw-bold" href="/parking/dashboard" th:href="@{/parking/dashboard}">
+                    <i class="fas fa-car-side text-primary me-2"></i>
+                    Park & Ride
+                </a>
+            </div>
+            <div class="text-center mb-4">
+                <div class="mb-3">
+                    <i class="fas fa-user-circle fa-4x text-primary"></i>
+                </div>
+                <h6 th:text="${user.firstName + ' ' + user.lastName}">User Name</h6>
+                <small class="text-muted d-block" th:text="${user.email}">user@example.com</small>
+                <div class="user-rewards mt-2">
+                    <span class="badge bg-warning text-dark">
+                        <i class="fas fa-gift me-1"></i>
+                        <span th:text="${user.rewardPoints}">0</span> Points
+                    </span>
+                </div>
+            </div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" href="/parking/dashboard" th:href="@{/parking/dashboard}">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/parking/my-reservations" th:href="@{/parking/my-reservations}">
+                        <i class="fas fa-ticket-alt"></i>
+                        My Reservations
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/user/subscriptions" th:href="@{/user/subscriptions}">
+                        <i class="fas fa-crown"></i>
+                        Subscriptions
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/user/rewards" th:href="@{/user/rewards}">
+                        <i class="fas fa-gift"></i>
+                        Rewards
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/rides/last-mile" th:href="@{/rides/last-mile}">
+                        <i class="fas fa-shuttle-van"></i>
+                        Last-Mile Rides
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/user/profile" th:href="@{/user/profile}">
+                        <i class="fas fa-user-cog"></i>
+                        Profile
+                    </a>
+                </li>
+                <li class="nav-item mt-5">
+                    <a class="nav-link text-danger" href="/logout" th:href="@{/logout}">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="content-wrapper">
+        <!-- Alerts -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${param.error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- My Reservations Header -->
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2">My Reservations</h1>
+            <div class="btn-toolbar mb-2 mb-md-0">
+                <div class="btn-group me-2">
+                    <button id="themeToggle" class="btn btn-sm btn-outline-secondary theme-toggle">
+                        <i class="fas fa-moon"></i> Dark Mode
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-buttons">
+            <button class="btn tab-btn active" data-target="all">All Reservations</button>
+            <button class="btn tab-btn" data-target="active">Active</button>
+            <button class="btn tab-btn" data-target="upcoming">Upcoming</button>
+            <button class="btn tab-btn" data-target="completed">Completed</button>
+            <button class="btn tab-btn" data-target="cancelled">Cancelled</button>
+        </div>
+
+        <!-- Reservations List -->
+        <div class="reservations-container">
+            <div th:if="${reservations.empty}" class="alert alert-info text-center">
+                <i class="fas fa-info-circle me-2"></i> No reservations found
+            </div>
+            
+            <div th:each="reservation : ${reservations}" class="reservation-card card" th:data-status="${reservation.status.name()}" th:id="${'reservation-' + reservation.reservationId}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-ticket-alt me-2 text-primary"></i> 
+                        Reservation #<span th:text="${#strings.substring(reservation.reservationId, 0, 8)}">abc123</span>
+                    </h5>
+                    <span th:if="${reservation.status.name() == 'CONFIRMED'}" class="badge bg-success badge-status">CONFIRMED</span>
+                    <span th:if="${reservation.status.name() == 'PENDING'}" class="badge bg-warning badge-status">PENDING</span>
+                    <span th:if="${reservation.status.name() == 'CANCELLED'}" class="badge bg-danger badge-status">CANCELLED</span>
+                    <span th:if="${reservation.status.name() == 'COMPLETED'}" class="badge bg-secondary badge-status">COMPLETED</span>
+                </div>
+                <div class="card-body">
+                    <div class="vehicle-badge">
+                        <i class="fas fa-car-side me-1"></i>
+                        <span th:text="${user.vehicleNumber}">MH-01-AB-1234</span>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="reservation-detail">
+                                <span class="reservation-detail-label">Spot ID:</span>
+                                <span th:text="${reservation.spotId}">SPOT1</span>
+                            </div>
+                            <div class="reservation-detail">
+                                <span class="reservation-detail-label">Start Time:</span>
+                                <span th:text="${#temporals.format(reservation.startTime, 'yyyy-MM-dd HH:mm')}">2023-01-01 08:00</span>
+                            </div>
+                            <div class="reservation-detail">
+                                <span class="reservation-detail-label">End Time:</span>
+                                <span th:text="${#temporals.format(reservation.endTime, 'yyyy-MM-dd HH:mm')}">2023-01-01 18:00</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="reservation-detail">
+                                <span class="reservation-detail-label">Type:</span>
+                                <span th:text="${reservation.type}">HOURLY</span>
+                            </div>
+                            <div class="reservation-detail">
+                                <span class="reservation-detail-label">Total Cost:</span>
+                                <span class="fw-bold text-success">$<span th:text="${#numbers.formatDecimal(reservation.totalCost, 1, 2)}">25.00</span></span>
+                            </div>
+                            <div class="reservation-detail" th:if="${reservation.status.name() == 'CANCELLED'}">
+                                <span class="reservation-detail-label">Refund Amount:</span>
+                                <span class="fw-bold text-danger">$<span th:text="${#numbers.formatDecimal(reservation.refundAmount, 1, 2)}">0.00</span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-center" th:if="${reservation.status.name() == 'CONFIRMED'}">
+                        <div class="qr-code-container">
+                            <div class="qr-code-header py-2 bg-primary text-white rounded-top">
+                                <i class="fas fa-parking me-2"></i> Parking Pass
+                            </div>
+                            <div class="qr-code-box py-3 px-4 border border-2 border-primary mb-0 d-inline-block">
+                                <i class="fas fa-qrcode fa-5x text-dark"></i>
+                            </div>
+                            <div class="qr-code-footer py-2 bg-light border border-top-0 border-primary rounded-bottom px-3">
+                                <div class="d-flex justify-content-center align-items-center mb-1">
+                                    <span class="badge bg-primary me-2">Spot</span>
+                                    <strong th:text="${reservation.spotId}">SPOT1</strong>
+                                </div>
+                                <small class="text-muted d-block">ID: <span th:text="${#strings.substring(reservation.reservationId, 0, 8)}">abc123</span></small>
+                                <small class="text-muted d-block">Valid: <span th:text="${#temporals.format(reservation.startTime, 'MM/dd')}">01/01</span> - <span th:text="${#temporals.format(reservation.endTime, 'MM/dd')}">01/01</span></small>
+                                <p class="mb-0 mt-2 small text-primary fw-bold">SCAN AT ENTRY/EXIT</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer" th:if="${reservation.canBeCancelled()}">
+                    <form th:action="@{/parking/cancel/{id}(id=${reservation.reservationId})}" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to cancel this reservation? Refund policies may apply.')">
+                            <i class="fas fa-times-circle me-1"></i> Cancel Reservation
+                        </button>
+                    </form>
+                    <a th:href="@{/parking/modify/{id}(id=${reservation.reservationId})}" class="btn btn-secondary">
+                        <i class="fas fa-edit me-1"></i> Modify
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Theme toggle functionality
+            const themeToggle = document.getElementById('themeToggle');
+            const body = document.body;
+            
+            // Check for stored preference and apply it
+            const darkModeEnabled = localStorage.getItem('darkMode') === 'true';
+            if (darkModeEnabled) {
+                body.classList.add('dark-mode');
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+            }
+            
+            themeToggle.addEventListener('click', function() {
+                body.classList.toggle('dark-mode');
+                
+                const isDarkMode = body.classList.contains('dark-mode');
+                localStorage.setItem('darkMode', isDarkMode);
+                
+                if (isDarkMode) {
+                    themeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+                } else {
+                    themeToggle.innerHTML = '<i class="fas fa-moon"></i> Dark Mode';
+                }
+            });
+            
+            // Tab filtering functionality
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const reservationCards = document.querySelectorAll('.reservation-card');
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    
+                    const target = this.getAttribute('data-target');
+                    
+                    reservationCards.forEach(card => {
+                        const status = card.getAttribute('data-status');
+                        
+                        if (target === 'all') {
+                            card.style.display = 'block';
+                        } else if (target === 'active' && status === 'CONFIRMED') {
+                            card.style.display = 'block';
+                        } else if (target === 'upcoming' && status === 'PENDING') {
+                            card.style.display = 'block';
+                        } else if (target === 'completed' && status === 'COMPLETED') {
+                            card.style.display = 'block';
+                        } else if (target === 'cancelled' && status === 'CANCELLED') {
+                            card.style.display = 'block';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html> 

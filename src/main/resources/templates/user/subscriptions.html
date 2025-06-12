@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subscriptions - Park and Ride</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            transition: background-color 0.3s ease;
+        }
+        body.dark-mode {
+            background-color: #212529;
+            color: #f8f9fa;
+        }
+        .dark-mode .card {
+            background-color: #343a40;
+            color: #f8f9fa;
+        }
+        .dark-mode .sidebar {
+            background-color: #343a40;
+        }
+        .dark-mode .sidebar .nav-link {
+            color: #f8f9fa;
+        }
+        .dark-mode .table {
+            color: #f8f9fa;
+        }
+        .dark-mode .badge {
+            border-color: #6c757d;
+        }
+        .dark-mode .form-label {
+            color: #f8f9fa;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            padding: 48px 0 0;
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+            background-color: #ffffff;
+        }
+        .sidebar .nav-link {
+            font-weight: 500;
+            color: #333;
+            padding: 0.75rem 1.5rem;
+        }
+        .sidebar .nav-link.active {
+            color: #0d6efd;
+        }
+        .sidebar .nav-link:hover {
+            color: #0d6efd;
+        }
+        .sidebar .nav-link i {
+            margin-right: 10px;
+        }
+        .content-wrapper {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                top: 5rem;
+            }
+            .content-wrapper {
+                margin-left: 0;
+            }
+        }
+        .subscription-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+        }
+        .subscription-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+        .subscription-card.active {
+            border: 3px solid #28a745;
+        }
+        .dark-mode .subscription-card.active {
+            border-color: #28a745;
+        }
+        .subscription-card .card-header {
+            font-weight: bold;
+            text-align: center;
+            padding: 15px;
+        }
+        .subscription-price {
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .subscription-period {
+            font-size: 0.9rem;
+            display: block;
+            text-align: center;
+            opacity: 0.8;
+        }
+        .subscription-feature {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+        }
+        .subscription-feature i {
+            margin-right: 10px;
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navbar -->
+    <nav class="navbar navbar-light bg-white fixed-top shadow-sm d-md-none">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="fas fa-car-side text-primary me-2"></i>
+                Park & Ride
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+        <div class="position-sticky">
+            <div class="d-none d-md-flex align-items-center justify-content-center p-3 mb-3">
+                <a class="navbar-brand fw-bold" href="/parking/dashboard" th:href="@{/parking/dashboard}">
+                    <i class="fas fa-car-side text-primary me-2"></i>
+                    Park & Ride
+                </a>
+            </div>
+            <div class="text-center mb-4">
+                <div class="mb-3">
+                    <i class="fas fa-user-circle fa-4x text-primary"></i>
+                </div>
+                <h6 th:text="${user.firstName + ' ' + user.lastName}">User Name</h6>
+                <small class="text-muted d-block" th:text="${user.email}">user@example.com</small>
+                <div class="user-subscription mt-2" th:if="${user.hasActiveSubscription()}">
+                    <span class="badge bg-success">
+                        <i class="fas fa-crown me-1"></i>
+                        <span th:text="${user.subscriptionType.displayName}">Monthly Pass</span>
+                    </span>
+                </div>
+                <div class="user-rewards mt-2">
+                    <span class="badge bg-warning text-dark">
+                        <i class="fas fa-gift me-1"></i>
+                        <span th:text="${user.rewardPoints}">100</span> Points
+                    </span>
+                </div>
+            </div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" href="/parking/dashboard" th:href="@{/parking/dashboard}">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/parking/my-reservations" th:href="@{/parking/my-reservations}">
+                        <i class="fas fa-ticket-alt"></i>
+                        My Reservations
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/user/subscriptions" th:href="@{/user/subscriptions}">
+                        <i class="fas fa-crown"></i>
+                        Subscriptions
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/user/rewards" th:href="@{/user/rewards}">
+                        <i class="fas fa-gift"></i>
+                        Rewards
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/rides/last-mile" th:href="@{/rides/last-mile}">
+                        <i class="fas fa-shuttle-van"></i>
+                        Last-Mile Rides
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/user/profile" th:href="@{/user/profile}">
+                        <i class="fas fa-user-cog"></i>
+                        Profile
+                    </a>
+                </li>
+                <li class="nav-item mt-5">
+                    <a class="nav-link text-danger" href="/logout" th:href="@{/logout}">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="content-wrapper">
+        <!-- Alerts -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2">Subscription Plans</h1>
+            <div class="btn-toolbar mb-2 mb-md-0">
+                <div class="btn-group me-2">
+                    <button id="themeToggle" class="btn btn-sm btn-outline-secondary theme-toggle">
+                        <i class="fas fa-moon"></i> Dark Mode
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Subscription -->
+        <div class="row mb-4" th:if="${user.hasActiveSubscription()}">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Current Subscription</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 th:text="${user.subscriptionType.displayName}">Monthly Pass</h5>
+                                <p>Your subscription is valid until:
+                                    <strong th:text="${#temporals.format(user.subscriptionEndDate, 'MMMM dd, yyyy')}">December 31, 2023</strong>
+                                </p>
+                                <p>With this subscription, you receive:
+                                    <span class="badge bg-info" th:if="${user.subscriptionType.name() == 'MONTHLY'}">10% Discount</span>
+                                    <span class="badge bg-info" th:if="${user.subscriptionType.name() == 'QUARTERLY'}">15% Discount</span>
+                                    <span class="badge bg-info" th:if="${user.subscriptionType.name() == 'ANNUAL'}">25% Discount</span>
+                                    on all parking reservations
+                                </p>
+                            </div>
+                            <div class="col-md-6 text-md-end">
+                                <form th:action="@{/user/cancel-subscription}" method="post" style="display: inline-block;">
+                                    <button class="btn btn-outline-danger" type="submit" 
+                                            onclick="return confirm('Are you sure you want to cancel your subscription? This action cannot be undone.')">
+                                        <i class="fas fa-times-circle me-1"></i> Cancel Subscription
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Available Plans -->
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card subscription-card" th:classappend="${user.subscriptionType.name() == 'MONTHLY'} ? 'active' : ''">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Monthly Pass</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="subscription-price">
+                            $49.99 <span class="subscription-period">per month</span>
+                        </div>
+                        <hr>
+                        <div class="subscription-feature">
+                            <i class="fas fa-check-circle"></i> 10% Discount on all parking
+                        </div>
+                        <div class="subscription-feature">
+                            <i class="fas fa-check-circle"></i> Priority spot selection
+                        </div>
+                        <div class="subscription-feature">
+                            <i class="fas fa-check-circle"></i> Extended booking window
+                        </div>
+                        <div class="subscription-feature">
+                            <i class="fas fa-check-circle"></i> 2x Reward Points
+                        </div>
+                    </div>
+                    <div class="card-footer text-center">
+                        <form th:action="@{/user/subscribe}" method="post" th:if="${user.subscriptionType.name() != 'MONTHLY'}">
+                            <input type="hidden" name="plan" value="MONTHLY">
+                            <button class="btn btn-primary w-100" type="submit">Subscribe Now</button>
+                        </form>
+                        <span class="text-success font-weight-bold" th:if="${user.subscriptionType.name() == 'MONTHLY'}">
+                            <i class="fas fa-check-circle me-2"></i> Current Plan
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card subscription-card" th:classappend="${user.subscriptionType.name() == 'QUARTERLY'} ? 'active' : ''">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Quarterly Pass</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="subscription-price">
+                            $129.99 <span class="subscription-period">per quarter</span>
+                        </div>
+                        <hr>
+                        <div class="subscription-feature">
+                            <i class="fas fa-check-circle"></i> 15% Discount on all parking
+                        </div>
+                        <div class="subscription-feature">
+                            <i class="fas fa-check-circle"></i> Priority spot selection
+                        </div>
+                        <div class="subscription-feature">
+                            <i class="fas fa-check-circle"></i> Extended booking window
+                        </div>
+                        <div class="subscription-feature">
+                            <i class="fas fa-check-circle"></i> 3x Reward Points
+                        </div>
+                        <div class="subscription-feature">
+                            <i class="fas fa-check-circle"></i> 2 Free reservations
+                        </div>
+                    </div>
+                    <div class="card-footer text-center">
+                        <form th:action="@{/user/subscribe}" method="post" th:if="${user.subscriptionType.name() != 'QUARTERLY'}">
+                            <input type="hidden" name="plan" value="QUARTERLY">
+                            <button class="btn btn-success w-100" type="submit">Subscribe Now</button>
+                        </form>
+                        <span class="text-success font-weight-bold" th:if="${user.subscriptionType.name() == 'QUARTERLY'}">
+                            <i class="fas fa-check-circle me-2"></i> Current Plan
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card subscription-card" th:classappend="${user.subscriptionType.name() == 'ANNUAL'} ? 'active' : ''">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">Annual Pass</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="subscription-price">
+                            $399.99 <span class="subscription-period">per year</span>
+                        </div>
+                        <hr>
+                        <div class="subscription-feature">
+                            <i class="fas fa-check-circle"></i> 25% Discount on all parking
+                        </div>
+                        <div class="subscription-feature">
+                            <i class="fas fa-check-circle"></i> Priority spot selection
+                        </div>
+                        <div class="subscription-feature">
+                            <i class="fas fa-check-circle"></i> Extended booking window
+                        </div>
+                        <div class="subscription-feature">
+                            <i class="fas fa-check-circle"></i> 5x Reward Points
+                        </div>
+                        <div class="subscription-feature">
+                            <i class="fas fa-check-circle"></i> 8 Free reservations
+                        </div>
+                        <div class="subscription-feature">
+                            <i class="fas fa-check-circle"></i> Premium customer support
+                        </div>
+                    </div>
+                    <div class="card-footer text-center">
+                        <form th:action="@{/user/subscribe}" method="post" th:if="${user.subscriptionType.name() != 'ANNUAL'}">
+                            <input type="hidden" name="plan" value="ANNUAL">
+                            <button class="btn btn-warning w-100" type="submit">Subscribe Now</button>
+                        </form>
+                        <span class="text-success font-weight-bold" th:if="${user.subscriptionType.name() == 'ANNUAL'}">
+                            <i class="fas fa-check-circle me-2"></i> Current Plan
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Theme toggle functionality
+            const themeToggle = document.getElementById('themeToggle');
+            const body = document.body;
+            
+            // Check for stored preference and apply it
+            const darkModeEnabled = localStorage.getItem('darkMode') === 'true';
+            if (darkModeEnabled) {
+                body.classList.add('dark-mode');
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+            }
+            
+            themeToggle.addEventListener('click', function() {
+                body.classList.toggle('dark-mode');
+                
+                const isDarkMode = body.classList.contains('dark-mode');
+                localStorage.setItem('darkMode', isDarkMode);
+                
+                if (isDarkMode) {
+                    themeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+                } else {
+                    themeToggle.innerHTML = '<i class="fas fa-moon"></i> Dark Mode';
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

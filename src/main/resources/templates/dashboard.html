@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>Dashboard - Park and Ride</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" th:href="@{'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css?v=' + ${@environment.getProperty('build.version', '1.0.0')}}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" th:href="@{'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css?v=' + ${@environment.getProperty('build.version', '1.0.0')}}">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            transition: background-color 0.3s ease;
+        }
+        body.dark-mode {
+            background-color: #212529;
+            color: #f8f9fa;
+        }
+        .dark-mode .card {
+            background-color: #343a40;
+            color: #f8f9fa;
+        }
+        .dark-mode .sidebar {
+            background-color: #343a40;
+        }
+        .dark-mode .sidebar .nav-link {
+            color: #f8f9fa;
+        }
+        .dark-mode .table {
+            color: #f8f9fa;
+        }
+        .dark-mode .form-label {
+            color: #f8f9fa;
+        }
+        .dark-mode .form-select {
+            background-color: #495057;
+            color: #f8f9fa;
+            border-color: #6c757d;
+        }
+        .dark-mode .form-select option {
+            background-color: #495057;
+            color: #f8f9fa;
+        }
+        .dark-mode .card-header {
+            background-color: #0d6efd !important;
+        }
+        .dark-mode .table th {
+            color: #adb5bd;
+            font-weight: 600;
+        }
+        .dark-mode .table td {
+            color: #e9ecef;
+            font-weight: 500;
+        }
+        /* Reset and base styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow-x: hidden;
+        }
+        
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 280px;
+            z-index: 1000;
+            padding: 20px 0;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            background-color: #ffffff;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            white-space: nowrap;
+            transition: transform 0.3s ease-in-out;
+            will-change: transform;
+            backface-visibility: hidden;
+            transform: translate3d(0, 0, 0);
+        }
+        .sidebar .nav-link {
+            font-weight: 500;
+            color: #333;
+            padding: 0.75rem 1.5rem;
+            white-space: nowrap;  /* Prevent text wrapping */
+            overflow: visible;    /* Ensure text is not hidden */
+            text-overflow: clip;  /* Don't show ellipsis */
+        }
+        .sidebar .nav-link.active {
+            color: #0d6efd;
+        }
+        .sidebar .nav-link:hover {
+            color: #0d6efd;
+        }
+        .sidebar .nav-link i {
+            margin-right: 10px;
+        }
+        .content-wrapper {
+            margin-left: 280px;
+            padding: 20px 30px;
+            min-height: 100vh;
+            transition: all 0.3s ease;
+            width: calc(100% - 280px);
+            position: relative;
+            background-color: #f8f9fa;
+            min-width: 0; /* Fix for flexbox issues */
+            overflow: hidden;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                z-index: 1040;
+            }
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            .content-wrapper {
+                margin-left: 0;
+                width: 100%;
+                padding: 20px 15px;
+            }
+            .content-wrapper.shift-right {
+                transform: translateX(280px);
+            }
+            .navbar-toggler {
+                display: block !important;
+            }
+        }
+        .reservation-card {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+            border-radius: 0.5rem;
+            transition: transform 0.3s ease;
+        }
+        .reservation-card:hover {
+            transform: translateY(-5px);
+        }
+        .badge-status {
+            padding: 0.5rem 0.75rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+        }
+        .user-credits {
+            background-color: #198754;
+            color: white;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 5px;
+        }
+        .theme-toggle {
+            cursor: pointer;
+        }
+        .vehicle-badge {
+            background-color: #0d6efd;
+            color: white;
+            border-radius: 5px;
+            padding: 2px 8px;
+            font-size: 0.8rem;
+            display: inline-block;
+        }
+        
+        /* Subscription Styles */
+        .subscription-badge {
+            position: relative;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .subscription-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .subscription-badge.bg-gradient-primary {
+            background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        }
+        
+        .subscription-badge .subscription-icon {
+            width: 40px;
+            text-align: center;
+        }
+        
+        .subscription-badge .subscription-details {
+            flex: 1;
+        }
+        
+        .subscription-badge .subscription-title {
+            font-size: 0.9rem;
+            line-height: 1.2;
+        }
+        
+        .subscription-badge .subscription-status {
+            font-size: 0.75rem;
+            margin-top: 2px;
+        }
+        
+        .subscription-badge .subscription-expiry {
+            margin-top: 4px;
+            font-size: 0.7rem;
+            opacity: 0.9;
+        }
+        /* Add fixed height for dashboard stat cards */
+        .dashboard-stat-card .card-body {
+            height: 120px;
+            display: flex;
+            align-items: center;
+        }
+        /* Ensure all dashboard cards have the same height including footer */
+        .dashboard-stat-card {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .dashboard-stat-card .card-footer {
+            margin-top: auto;
+        }
+        /* Add placeholder footer to maintain same height across all cards */
+        .dashboard-stat-card .placeholder-footer {
+            height: 49px; /* Match the height of the card with footer */
+            margin-top: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navbar -->
+    <nav class="navbar navbar-light bg-white fixed-top shadow-sm d-md-none">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="fas fa-car-side text-primary me-2"></i>
+                Park & Ride
+            </a>
+            <button class="navbar-toggler d-md-none" type="button" onclick="toggleSidebar()">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <nav id="sidebarMenu" class="sidebar">
+        <div class="position-sticky">
+            <div class="d-none d-md-flex align-items-center justify-content-center p-3 mb-3">
+                <a class="navbar-brand fw-bold" href="/parking/dashboard" th:href="@{/parking/dashboard}">
+                    <i class="fas fa-car-side text-primary me-2"></i>
+                    Park & Ride
+                </a>
+            </div>
+            <div class="text-center mb-4">
+                <div class="mb-3">
+                    <i class="fas fa-user-circle fa-4x text-primary"></i>
+                </div>
+                <h6 th:text="${user.firstName + ' ' + user.lastName}">User Name</h6>
+                <small class="text-muted d-block" th:text="${user.email}">user@example.com</small>
+                <div class="user-subscription mt-3 mb-3" th:if="${user.hasActiveSubscription()}">
+                    <div class="subscription-badge bg-gradient-primary text-white p-3 rounded-3">
+                        <div class="d-flex align-items-center">
+                            <div class="subscription-icon me-3">
+                                <i class="fas fa-crown fa-2x"></i>
+                            </div>
+                            <div class="subscription-details">
+                                <div class="subscription-title fw-bold" th:text="${user.subscriptionType.displayName}">Premium Plan</div>
+                                <div class="subscription-status text-white-50 small">Active</div>
+                                <div class="subscription-expiry small" th:if="${user.subscriptionExpiryDate}">
+                                    Expires <span th:text="${#temporals.format(user.subscriptionExpiryDate, 'MMM d, yyyy')}">Dec 31, 2023</span>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="/user/subscriptions" class="stretched-link" th:href="@{/user/subscriptions}"></a>
+                    </div>
+                </div>
+                <div class="user-subscription mt-3 mb-3" th:unless="${user.hasActiveSubscription()}">
+                    <div class="subscription-badge bg-light border p-3 rounded-3">
+                        <div class="d-flex align-items-center">
+                            <div class="subscription-icon me-3 text-muted">
+                                <i class="fas fa-crown fa-2x"></i>
+                            </div>
+                            <div class="subscription-details">
+                                <div class="subscription-title fw-bold">No Active Subscription</div>
+                                <div class="subscription-status text-muted small">Subscribe to unlock benefits</div>
+                            </div>
+                            <div class="ms-auto">
+                                <i class="fas fa-chevron-right text-muted"></i>
+                            </div>
+                        </div>
+                        <a href="/user/subscriptions" class="stretched-link" th:href="@{/user/subscriptions}"></a>
+                    </div>
+                </div>
+                <div class="user-rewards mt-2">
+                    <span class="badge bg-warning text-dark">
+                        <i class="fas fa-gift me-1"></i>
+                        <span th:text="${user.rewardPoints}">100</span> Points
+                    </span>
+                </div>
+            </div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link active" href="/parking/dashboard" th:href="@{/parking/dashboard}">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/parking/my-reservations" th:href="@{/parking/my-reservations}">
+                        <i class="fas fa-ticket-alt"></i>
+                        My Reservations
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/user/subscriptions" th:href="@{/user/subscriptions}">
+                        <i class="fas fa-crown"></i>
+                        Subscriptions
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/user/rewards" th:href="@{/user/rewards}">
+                        <i class="fas fa-gift"></i>
+                        Rewards
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/rides/last-mile" th:href="@{/rides/last-mile}">
+                        <i class="fas fa-shuttle-van"></i>
+                        Last-Mile Rides
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/rides/my-rides" th:href="@{/rides/my-rides}">
+                        <i class="fas fa-history"></i>
+                        My Rides
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/user/profile" th:href="@{/user/profile}">
+                        <i class="fas fa-user-cog"></i>
+                        Profile
+                    </a>
+                </li>
+                <li class="nav-item mt-5">
+                    <a class="nav-link text-danger" href="/logout" th:href="@{/logout}">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="content-wrapper">
+        <!-- Alerts -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${param.error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Dashboard Header -->
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2">Dashboard</h1>
+            <div class="btn-toolbar mb-2 mb-md-0">
+                <div class="btn-group me-2">
+                    <button id="themeToggle" class="btn btn-sm btn-outline-secondary theme-toggle">
+                        <i class="fas fa-moon"></i> Dark Mode
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-primary mb-3 dashboard-stat-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center w-100">
+                            <div>
+                                <h6 class="card-title">Total Reservations</h6>
+                                <h2 class="card-text" th:text="${totalReservations}">0</h2>
+                            </div>
+                            <i class="fas fa-ticket-alt fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-top text-center">
+                        <a href="/parking/my-reservations" th:href="@{/parking/my-reservations}" class="text-white">View Reservations <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-success mb-3 dashboard-stat-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center w-100">
+                            <div>
+                                <h6 class="card-title">My Rewards</h6>
+                                <h2 class="card-text"><span th:text="${user.rewardPoints}">0</span> Points</h2>
+                            </div>
+                            <i class="fas fa-gift fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-top text-center">
+                        <a href="/user/rewards" th:href="@{/user/rewards}" class="text-white">View Rewards <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-info mb-3 dashboard-stat-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center w-100">
+                            <div>
+                                <h6 class="card-title">Last-Mile Rides</h6>
+                                <h2 class="card-text" id="dashboardRideCount">0</h2>
+                            </div>
+                            <i class="fas fa-shuttle-van fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-top text-center">
+                        <a href="/rides/last-mile" th:href="@{/rides/last-mile}" class="text-white">Book a Ride <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning mb-3 dashboard-stat-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center w-100">
+                            <div>
+                                <h6 class="card-title">My Rides</h6>
+                                <h2 class="card-text" id="dashboardRideHistoryCount">0</h2>
+                            </div>
+                            <i class="fas fa-history fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-top text-center">
+                        <a href="/rides/my-rides" th:href="@{/rides/my-rides}" class="text-white">View My Rides <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Book New Parking -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Book New Parking</h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="/parking/spots" th:action="@{/parking/spots}" method="get" class="row g-3">
+                            <div class="col-md-6">
+                                <label for="location" class="form-label">Select Location</label>
+                                <select class="form-select" id="location" name="location" required>
+                                    <option value="" selected disabled>Choose a location...</option>
+                                    <option th:each="location : ${locations}" th:value="${location}" th:text="${location}"></option>
+                                </select>
+                            </div>
+                            <div class="col-12 mt-4">
+                                <button type="submit" class="btn btn-primary">Find Available Spots</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Reservations -->
+        <div class="mb-4">
+            <h4>Recent Reservations</h4>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Spot</th>
+                            <th>Vehicle</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="reservation : ${reservations}">
+                            <td th:text="${reservation.spotId}">SPOT1</td>
+                            <td>
+                                <div class="vehicle-badge">
+                                    <i class="fas fa-car-side me-1"></i>
+                                    <span th:text="${user.vehicleNumber}">MH-01-AB-1234</span>
+                                </div>
+                            </td>
+                            <td th:text="${#temporals.format(reservation.startTime, 'yyyy-MM-dd HH:mm')}">2023-01-01 08:00</td>
+                            <td th:text="${#temporals.format(reservation.endTime, 'yyyy-MM-dd HH:mm')}">2023-01-01 18:00</td>
+                        </tr>
+                        <tr th:if="${reservations.empty}">
+                            <td colspan="4" class="text-center">No reservations found</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Toggle sidebar on mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebarMenu');
+            const contentWrapper = document.querySelector('.content-wrapper');
+            const isOpen = sidebar.classList.toggle('show');
+            
+            if (window.innerWidth <= 768) {
+                if (isOpen) {
+                    contentWrapper.classList.add('shift-right');
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    contentWrapper.classList.remove('shift-right');
+                    document.body.style.overflow = '';
+                }
+            }
+        }
+        
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebarMenu');
+            const toggleButton = document.querySelector('.navbar-toggler');
+            const contentWrapper = document.querySelector('.content-wrapper');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(event.target) && 
+                !toggleButton.contains(event.target) &&
+                sidebar.classList.contains('show')) {
+                
+                sidebar.classList.remove('show');
+                contentWrapper.classList.remove('shift-right');
+                document.body.style.overflow = '';
+            }
+        });
+        document.addEventListener('DOMContentLoaded', function() {
+            // Theme toggle functionality
+            const themeToggle = document.getElementById('themeToggle');
+            const body = document.body;
+            
+            // Check for stored preference and apply it
+            const darkModeEnabled = localStorage.getItem('darkMode') === 'true';
+            if (darkModeEnabled) {
+                body.classList.add('dark-mode');
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+            }
+            
+            themeToggle.addEventListener('click', function() {
+                body.classList.toggle('dark-mode');
+                
+                const isDarkMode = body.classList.contains('dark-mode');
+                localStorage.setItem('darkMode', isDarkMode);
+                
+                if (isDarkMode) {
+                    themeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+                } else {
+                    themeToggle.innerHTML = '<i class="fas fa-moon"></i> Dark Mode';
+                }
+            });
+
+            // Update ride count on dashboard from localStorage
+            updateRideCounts();
+            
+            // Check for ride updates (e.g., from cancellations)
+            if (localStorage.getItem('ridesUpdated') === 'true') {
+                // Re-count the rides
+                updateRideCounts();
+                // Clear the flag
+                localStorage.removeItem('ridesUpdated');
+            }
+            
+            // Add a button to clear ride history
+            const mainContent = document.querySelector('main.content-wrapper');
+            const clearHistoryDiv = document.createElement('div');
+            clearHistoryDiv.className = 'mt-5 text-center';
+            clearHistoryDiv.innerHTML = `
+                <hr>
+                <h5>App Management</h5>
+                <button id="clearRideHistoryBtn" class="btn btn-danger mt-2">
+                    <i class="fas fa-trash-alt me-1"></i> Clear Ride History
+                </button>
+            `;
+            mainContent.appendChild(clearHistoryDiv);
+            
+            // Add event listener for clear ride history button
+            document.getElementById('clearRideHistoryBtn').addEventListener('click', function() {
+                if (confirm('Are you sure you want to clear your ride history? This action cannot be undone.')) {
+                    localStorage.removeItem('rideHistory');
+                    alert('Ride history cleared successfully.');
+                    // Update counts
+                    updateRideCounts();
+                }
+            });
+        });
+        
+        function updateRideCounts() {
+            // Get all ride history from localStorage
+            const rideHistory = JSON.parse(localStorage.getItem('rideHistory')) || [];
+            
+            // Count total rides
+            const totalRides = rideHistory.length;
+            
+            // Count active (ongoing) rides
+            const activeRides = rideHistory.filter(ride => 
+                ride.status === 'ongoing' || !ride.status
+            ).length;
+            
+            // Update dashboard counts
+            const dashboardRideCount = document.getElementById('dashboardRideCount');
+            const dashboardRideHistoryCount = document.getElementById('dashboardRideHistoryCount');
+            
+            if (dashboardRideCount) {
+                dashboardRideCount.textContent = activeRides;
+            }
+            
+            if (dashboardRideHistoryCount) {
+                dashboardRideHistoryCount.textContent = totalRides;
+            }
+        }
+    </script>
+</body>
+</html> 

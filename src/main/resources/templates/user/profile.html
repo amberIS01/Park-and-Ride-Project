@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - Park and Ride</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            transition: background-color 0.3s ease;
+        }
+        body.dark-mode {
+            background-color: #212529;
+            color: #f8f9fa;
+        }
+        .dark-mode .card {
+            background-color: #343a40;
+            color: #f8f9fa;
+        }
+        .dark-mode .sidebar {
+            background-color: #343a40;
+        }
+        .dark-mode .sidebar .nav-link {
+            color: #f8f9fa;
+        }
+        .dark-mode .table {
+            color: #f8f9fa;
+        }
+        .dark-mode .card-header {
+            background-color: #0d6efd !important;
+        }
+        .dark-mode .profile-info {
+            background-color: #343a40;
+        }
+        .dark-mode .info-label {
+            color: #adb5bd;
+        }
+        .dark-mode .btn-outline-primary {
+            color: #6ea8fe;
+            border-color: #6ea8fe;
+        }
+        .dark-mode .btn-outline-danger {
+            color: #ea868f;
+            border-color: #ea868f;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            padding: 48px 0 0;
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+            background-color: #ffffff;
+        }
+        .sidebar .nav-link {
+            font-weight: 500;
+            color: #333;
+            padding: 0.75rem 1.5rem;
+        }
+        .sidebar .nav-link.active {
+            color: #0d6efd;
+        }
+        .sidebar .nav-link:hover {
+            color: #0d6efd;
+        }
+        .sidebar .nav-link i {
+            margin-right: 10px;
+        }
+        .content-wrapper {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                top: 5rem;
+            }
+            .content-wrapper {
+                margin-left: 0;
+            }
+        }
+        .user-credits {
+            background-color: #198754;
+            color: white;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 5px;
+        }
+        .theme-toggle {
+            cursor: pointer;
+        }
+        .profile-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .profile-image {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #e9ecef;
+            font-size: 75px;
+            color: #0d6efd;
+        }
+        .profile-info {
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+        }
+        .profile-info-row {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .profile-info-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #6c757d;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .info-value {
+            font-size: 18px;
+        }
+        .credit-box {
+            background-color: #198754;
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .credit-amount {
+            font-size: 48px;
+            font-weight: bold;
+        }
+        .vehicle-badge {
+            background-color: #0d6efd;
+            color: white;
+            border-radius: 5px;
+            padding: 5px 10px;
+            font-weight: bold;
+            font-size: 16px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navbar -->
+    <nav class="navbar navbar-light bg-white fixed-top shadow-sm d-md-none">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="fas fa-car-side text-primary me-2"></i>
+                Park & Ride
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+        <div class="position-sticky">
+            <div class="d-none d-md-flex align-items-center justify-content-center p-3 mb-3">
+                <a class="navbar-brand fw-bold" href="/parking/dashboard" th:href="@{/parking/dashboard}">
+                    <i class="fas fa-car-side text-primary me-2"></i>
+                    Park & Ride
+                </a>
+            </div>
+            <div class="text-center mb-4">
+                <div class="mb-3">
+                    <i class="fas fa-user-circle fa-4x text-primary"></i>
+                </div>
+                <h6 th:text="${user.firstName + ' ' + user.lastName}">User Name</h6>
+                <small class="text-muted d-block" th:text="${user.email}">user@example.com</small>
+                <div class="user-rewards mt-2">
+                    <span class="badge bg-warning text-dark">
+                        <i class="fas fa-gift me-1"></i>
+                        <span th:text="${user.rewardPoints}">0</span> Points
+                    </span>
+                </div>
+            </div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" href="/parking/dashboard" th:href="@{/parking/dashboard}">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/parking/my-reservations" th:href="@{/parking/my-reservations}">
+                        <i class="fas fa-ticket-alt"></i>
+                        My Reservations
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/user/subscriptions" th:href="@{/user/subscriptions}">
+                        <i class="fas fa-crown"></i>
+                        Subscriptions
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/user/rewards" th:href="@{/user/rewards}">
+                        <i class="fas fa-gift"></i>
+                        Rewards
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/rides/last-mile" th:href="@{/rides/last-mile}">
+                        <i class="fas fa-shuttle-van"></i>
+                        Last-Mile Rides
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/user/profile" th:href="@{/user/profile}">
+                        <i class="fas fa-user-cog"></i>
+                        Profile
+                    </a>
+                </li>
+                <li class="nav-item mt-5">
+                    <a class="nav-link text-danger" href="/logout" th:href="@{/logout}">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="content-wrapper">
+        <!-- Alerts -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Profile Header -->
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2">My Profile</h1>
+            <div class="btn-toolbar mb-2 mb-md-0">
+                <div class="btn-group me-2">
+                    <button id="themeToggle" class="btn btn-sm btn-outline-secondary theme-toggle">
+                        <i class="fas fa-moon"></i> Dark Mode
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Content -->
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <div class="profile-header">
+                    <div class="profile-image">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <h3 class="mt-3" th:text="${user.firstName + ' ' + user.lastName}">John Doe</h3>
+                    <div class="vehicle-badge mt-2">
+                        <i class="fas fa-car me-1"></i>
+                        <span th:text="${user.vehicleNumber ?: 'No Vehicle'}">MH-01-AB-1234</span>
+                    </div>
+                </div>
+
+                <div class="profile-info">
+                    <div class="profile-info-row">
+                        <span class="info-label">Username</span>
+                        <span class="info-value" th:text="${user.username}">johndoe</span>
+                    </div>
+                    <div class="profile-info-row">
+                        <span class="info-label">Email</span>
+                        <span class="info-value" th:text="${user.email}">john@example.com</span>
+                    </div>
+                    <div class="profile-info-row">
+                        <span class="info-label">Full Name</span>
+                        <span class="info-value" th:text="${user.firstName + ' ' + user.lastName}">John Doe</span>
+                    </div>
+                    <div class="profile-info-row">
+                        <span class="info-label">Vehicle Number</span>
+                        <span class="info-value" th:text="${user.vehicleNumber ?: 'Not provided'}">MH-01-AB-1234</span>
+                    </div>
+                </div>
+
+                <div class="credit-box">
+                    <h4>Available Credits</h4>
+                    <div class="credit-amount">$<span th:text="${#numbers.formatDecimal(user.creditBalance, 1, 2)}">50.00</span></div>
+                    <p class="mt-2 mb-0">Use these credits for reservation payments</p>
+                </div>
+
+                <div class="d-flex justify-content-center mt-4">
+                    <a href="#" class="btn btn-outline-primary me-3">
+                        <i class="fas fa-edit me-1"></i> Edit Profile
+                    </a>
+                    <a href="#" class="btn btn-outline-danger">
+                        <i class="fas fa-key me-1"></i> Change Password
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add after profile content but before closing main tag -->
+        <!-- Add this after the profile form section -->
+        <div class="row mt-4">
+            <div class="col-md-8 mx-auto">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Account Balance</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div>
+                                <h6 class="mb-0">Current Credit:</h6>
+                                <h2 class="mb-0">$<span th:text="${#numbers.formatDecimal(user.creditBalance, 1, 2)}">50.00</span></h2>
+                            </div>
+                            <i class="fas fa-dollar-sign fa-3x text-success"></i>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">Reward Points:</h6>
+                                <h4 class="mb-0"><span th:text="${user.rewardPoints}">0</span> points</h4>
+                            </div>
+                            <i class="fas fa-gift fa-3x text-warning"></i>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-light">
+                        <form th:action="@{/user/convert-points}" method="post" class="row g-3">
+                            <div class="col-8">
+                                <label for="points" class="form-label">Convert Points to Credit</label>
+                                <input type="number" class="form-control" id="points" name="points" min="10" max="1000" step="10" placeholder="Enter points (min 10)" required>
+                                <div class="form-text">10 points = $1.00 credit</div>
+                            </div>
+                            <div class="col-4 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100" th:disabled="${user.rewardPoints < 10}">Convert</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Theme toggle functionality
+            const themeToggle = document.getElementById('themeToggle');
+            const body = document.body;
+            
+            // Check for stored preference and apply it
+            const darkModeEnabled = localStorage.getItem('darkMode') === 'true';
+            if (darkModeEnabled) {
+                body.classList.add('dark-mode');
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+            }
+            
+            themeToggle.addEventListener('click', function() {
+                body.classList.toggle('dark-mode');
+                
+                const isDarkMode = body.classList.contains('dark-mode');
+                localStorage.setItem('darkMode', isDarkMode);
+                
+                if (isDarkMode) {
+                    themeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+                } else {
+                    themeToggle.innerHTML = '<i class="fas fa-moon"></i> Dark Mode';
+                }
+            });
+        });
+    </script>
+</body>
+</html> 
